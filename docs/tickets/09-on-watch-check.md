@@ -19,9 +19,11 @@ Confirm the face works on the real watch, and collect the tweaks that only show 
   - the small weekday and AM/PM text
 - Decide whether the up-to-a-minute frozen Rev Bar after a budget overrun (see ticket 05) is acceptable.
 - Write the agreed tweaks into `docs/design.md`. Open follow-up tickets for anything bigger than a constant change.
+- Delete `prototype/` from main, since the Monkey C code is now the reference. Remove the links to it from `docs/design.md` and `docs/tickets/README.md`.
 
 ## Acceptance
 
 - [ ] Battery drain is measured for both Rev Bar settings and noted here.
 - [ ] Peak memory is under the limit with headroom, and noted here.
 - [ ] The tweak list is written down, and `docs/design.md` is updated.
+- [ ] `prototype/` is gone from main.

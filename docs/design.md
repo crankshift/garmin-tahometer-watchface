@@ -1,6 +1,6 @@
 # Design: Tachometer Watch Face (v1)
 
-Agreed on 2026-09-23 in a design grilling session. The vocabulary lives in [`CONTEXT.md`](../CONTEXT.md). This file records the decisions. The throwaway HTML prototype that rendered them lives on the `prototype/html-face` branch (`prototype/index.html`); open it with `git show prototype/html-face:prototype/index.html > /tmp/face.html && open /tmp/face.html`.
+Agreed on 2026-09-23 in a design grilling session. The vocabulary lives in [`CONTEXT.md`](../CONTEXT.md). This file records the decisions. The throwaway HTML prototype that rendered them is [`prototype/index.html`](../prototype/index.html) (`open prototype/index.html`). It stays on main as the geometry reference for the port and is deleted once the port is done (ticket 09).
 
 ## Target
 

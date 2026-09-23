@@ -2,11 +2,7 @@
 
 The Monkey C port of the design in [`docs/design.md`](../design.md), split into slices. Each slice produces something you can see working in the simulator. The words used here come from [`CONTEXT.md`](../../CONTEXT.md).
 
-The throwaway HTML prototype is on the `prototype/html-face` branch. It holds the exact geometry, colors and icon drawings, and its drawing code goes through a `Dc` shim with the same method names as `Toybox.Graphics.Dc`, so most of it ports line by line. Open it with:
-
-```sh
-git show prototype/html-face:prototype/index.html > /tmp/face.html && open /tmp/face.html
-```
+The throwaway HTML prototype is [`prototype/index.html`](../../prototype/index.html); open it with `open prototype/index.html`. It holds the exact geometry, colors and icon drawings, and its drawing code goes through a `Dc` shim with the same method names as `Toybox.Graphics.Dc`, so most of it ports line by line. When a ticket and the prototype disagree, the ticket and `docs/design.md` win.
 
 ## How to use
 
