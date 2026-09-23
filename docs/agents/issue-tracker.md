@@ -7,7 +7,7 @@ Tickets and specs for this repo are markdown files committed to `main`. Planned 
 - Each ticket is its own file, `docs/tickets/<NN>-<slug>.md`. Numbering continues across features (v1 used 01 to 09).
 - `docs/tickets/README.md` lists every ticket in a table with its dependencies. Add a row for each new ticket.
 - A feature's spec is `docs/specs/<feature-slug>.md`. The v1 spec is `docs/design.md`.
-- Near the top of each ticket are a `Status:` line (`open`, `done`, or a triage role from `triage-labels.md`), a `Depends on:` line (ticket numbers, or `none`), and optionally a `Blocks:` line.
+- Near the top of each ticket are a `Status:` line (`open`, `partial`, `done`, or a triage role from `triage-labels.md`, optionally followed by a short note, as in `partial: <what's left>`), a `Depends on:` line (ticket numbers, or `none`), and optionally a `Blocks:` line.
 - A ticket is unblocked once every ticket in its `Depends on:` line is `done`. Work tickets in dependency order, and set `Status: done` when one is finished.
 - Record decisions made while working a ticket under its `## Decisions` heading. If a decision changes the design, record it in the spec too.
 - Add comments and conversation history at the bottom of the file, under a `## Comments` heading.
