@@ -2,6 +2,12 @@
 
 A Garmin Connect IQ watch face that reads like a car instrument cluster. The minutes are a tachometer, the hour is the gear, the seconds are a rev bar, and the battery is a fuel gauge.
 
+<p align="center">
+  <img src="docs/images/face.png" width="400" alt="The watch face at 10:06: gear 10, the amber sweep just past 0 on the tachometer, steps, date and heart rate in the middle row, weather at the bottom, and the fuel gauge at 8 of 10 segments">
+</p>
+
+<p align="center"><sub>10:06, shown at 3× in the <a href="prototype/index.html">HTML prototype</a>. On the watch the numerals are Barlow Condensed, so the digits look slightly different.</sub></p>
+
 Built for the fenix 7 Pro (47mm, 260×260 round MIP display). All geometry derives from the screen radius, so adding other round MIP devices should be cheap.
 
 ## Status
