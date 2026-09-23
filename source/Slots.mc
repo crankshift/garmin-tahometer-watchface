@@ -28,7 +28,7 @@ module Slots {
             dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
             dc.drawText(x, y - 11, headFont, content.head, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
         } else {
-            Readouts.drawIcon(dc, content.kind, x, y - 11, content.iconColor);
+            Readouts.drawIcon(dc, content.kind, x, y - 11, content.iconColor, content.extra);
         }
         dc.setColor(content.textColor, Graphics.COLOR_TRANSPARENT);
         dc.drawText(x, y + 10, valueFont, content.text, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
@@ -54,7 +54,7 @@ module Slots {
             dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
             dc.drawText(x0, y, headFont, content.head, Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
         } else {
-            Readouts.drawIcon(dc, content.kind, x0 + ICON_SIZE / 2.0, y, content.iconColor);
+            Readouts.drawIcon(dc, content.kind, x0 + ICON_SIZE / 2.0, y, content.iconColor, content.extra);
         }
         dc.setColor(content.textColor, Graphics.COLOR_TRANSPARENT);
         dc.drawText(x0 + lead + GAP, y, valueFont, content.text, Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);

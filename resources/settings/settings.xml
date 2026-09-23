@@ -62,4 +62,10 @@
       <listEntry value="8">@Strings.ReadoutEmpty</listEntry>
     </settingConfig>
   </setting>
+  <setting propertyKey="@Properties.WeatherTemperature" title="@Strings.WeatherTemperatureTitle">
+    <settingConfig type="list">
+      <listEntry value="0">@Strings.WeatherTemperatureFeelsLike</listEntry>
+      <listEntry value="1">@Strings.WeatherTemperatureActual</listEntry>
+    </settingConfig>
+  </setting>
 </settings>

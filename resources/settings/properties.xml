@@ -6,4 +6,5 @@
   <property id="CenterSlotReadout" type="number">0</property>
   <property id="RightSlotReadout" type="number">3</property>
   <property id="BottomSlotReadout" type="number">2</property>
+  <property id="WeatherTemperature" type="number">0</property>
 </properties>

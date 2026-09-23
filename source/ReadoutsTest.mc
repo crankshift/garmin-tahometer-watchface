@@ -1,5 +1,8 @@
 import Toybox.Lang;
 import Toybox.Graphics;
+import Toybox.System;
+import Toybox.Weather;
+import Toybox.Time;
 import Toybox.Test;
 
 (:test)
@@ -38,4 +41,91 @@ function testBatteryTextRoundsAndAppendsPercent(logger as Test.Logger) as Boolea
 (:test)
 function testEmptyReadoutIsNull(logger as Test.Logger) as Boolean {
     return Readouts.get(Readouts.EMPTY) == null;
+}
+
+(:test)
+function testChosenTemperatureDefaultsToFeelsLike(logger as Test.Logger) as Boolean {
+    return Readouts.chosenTemperature(15, 18, Readouts.TEMP_FEELS_LIKE) == 15
+        && Readouts.chosenTemperature(15, 18, Readouts.TEMP_ACTUAL) == 18;
+}
+
+// docs/tickets/08's own acceptance scenario: feels-like 15C / actual 18C.
+(:test)
+function testTemperatureTextFromTicketScenario(logger as Test.Logger) as Boolean {
+    var feelsLike = Readouts.chosenTemperature(15, 18, Readouts.TEMP_FEELS_LIKE);
+    var actual = Readouts.chosenTemperature(15, 18, Readouts.TEMP_ACTUAL);
+    return Readouts.temperatureText(feelsLike, System.UNIT_METRIC).equals("15°")
+        && Readouts.temperatureText(actual, System.UNIT_METRIC).equals("18°")
+        && Readouts.temperatureText(actual, System.UNIT_STATUTE).equals("64°");
+}
+
+(:test)
+function testTemperatureTextShowsDashWhenMissing(logger as Test.Logger) as Boolean {
+    return Readouts.temperatureText(null, System.UNIT_METRIC).equals("--");
+}
+
+(:test)
+function testWeatherIconKindMapsCommonConditions(logger as Test.Logger) as Boolean {
+    return Readouts.weatherIconKind(Weather.CONDITION_RAIN) == Icons.WEATHER_ICON_RAIN
+        && Readouts.weatherIconKind(Weather.CONDITION_SNOW) == Icons.WEATHER_ICON_SNOW
+        && Readouts.weatherIconKind(Weather.CONDITION_CLEAR) == Icons.WEATHER_ICON_CLEAR
+        && Readouts.weatherIconKind(Weather.CONDITION_THUNDERSTORMS) == Icons.WEATHER_ICON_THUNDER
+        && Readouts.weatherIconKind(Weather.CONDITION_FOG) == Icons.WEATHER_ICON_FOG
+        && Readouts.weatherIconKind(Weather.CONDITION_PARTLY_CLOUDY) == Icons.WEATHER_ICON_PARTLY_CLOUDY
+        && Readouts.weatherIconKind(Weather.CONDITION_CLOUDY) == Icons.WEATHER_ICON_CLOUDY;
+}
+
+(:test)
+function testWeatherIconKindDefaultsToCloudyForUnknown(logger as Test.Logger) as Boolean {
+    return Readouts.weatherIconKind(Weather.CONDITION_UNKNOWN) == Icons.WEATHER_ICON_CLOUDY
+        && Readouts.weatherIconKind(null) == Icons.WEATHER_ICON_CLOUDY;
+}
+
+(:test)
+function testChooseNextSunEventBeforeSunrise(logger as Test.Logger) as Boolean {
+    var event = Readouts.chooseNextSunEvent(
+        new Time.Moment(1000), new Time.Moment(2000), new Time.Moment(3000), new Time.Moment(4000)
+    );
+    return (event.get(:isRise) as Boolean) == true && (event.get(:moment) as Time.Moment).value() == 2000;
+}
+
+(:test)
+function testChooseNextSunEventBetweenSunriseAndSunset(logger as Test.Logger) as Boolean {
+    var event = Readouts.chooseNextSunEvent(
+        new Time.Moment(2500), new Time.Moment(2000), new Time.Moment(3000), new Time.Moment(4000)
+    );
+    return (event.get(:isRise) as Boolean) == false && (event.get(:moment) as Time.Moment).value() == 3000;
+}
+
+(:test)
+function testChooseNextSunEventAfterSunsetFallsToTomorrow(logger as Test.Logger) as Boolean {
+    var event = Readouts.chooseNextSunEvent(
+        new Time.Moment(3500), new Time.Moment(2000), new Time.Moment(3000), new Time.Moment(4000)
+    );
+    return (event.get(:isRise) as Boolean) == true && (event.get(:moment) as Time.Moment).value() == 4000;
+}
+
+(:test)
+function testChooseNextSunEventNullWhenTodayDataMissing(logger as Test.Logger) as Boolean {
+    var now = new Time.Moment(1000);
+    return Readouts.chooseNextSunEvent(now, null, new Time.Moment(3000), new Time.Moment(4000)) == null
+        && Readouts.chooseNextSunEvent(now, new Time.Moment(2000), null, new Time.Moment(4000)) == null;
+}
+
+(:test)
+function testChooseNextSunEventNullWhenTomorrowMissingAfterSunset(logger as Test.Logger) as Boolean {
+    var now = new Time.Moment(3500);
+    return Readouts.chooseNextSunEvent(now, new Time.Moment(2000), new Time.Moment(3000), null) == null;
+}
+
+(:test)
+function testFormatClock24Hour(logger as Test.Logger) as Boolean {
+    return Readouts.formatClock(6, 42, true).equals("06:42") && Readouts.formatClock(21, 0, true).equals("21:00");
+}
+
+(:test)
+function testFormatClock12Hour(logger as Test.Logger) as Boolean {
+    return Readouts.formatClock(6, 42, false).equals("6:42")
+        && Readouts.formatClock(0, 5, false).equals("12:05")
+        && Readouts.formatClock(13, 5, false).equals("1:05");
 }

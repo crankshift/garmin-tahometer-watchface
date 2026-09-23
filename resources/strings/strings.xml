@@ -20,5 +20,8 @@
     <string id="ReadoutNotifications">Notifications</string>
     <string id="ReadoutBattery">Battery %</string>
     <string id="ReadoutEmpty">Empty</string>
+    <string id="WeatherTemperatureTitle">Weather temperature</string>
+    <string id="WeatherTemperatureFeelsLike">Feels like</string>
+    <string id="WeatherTemperatureActual">Actual</string>
   </strings>
 </resources>
