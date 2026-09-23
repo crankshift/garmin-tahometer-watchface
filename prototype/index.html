@@ -1,0 +1,609 @@
+<!doctype html>
+<!--
+  PROTOTYPE: throwaway. Delete once the design is locked (decisions live in docs/design.md).
+
+  Plan: two layout variants of the tachometer watch face (A: Gear below center, B: Gear inside the
+  Tachometer with the Top Slot moved to the center row), switchable via ?variant=A|B and the floating
+  bar, on this single page. The numeral font (DIN condensed or 7-segment) is a panel toggle.
+  Everything else follows docs/design.md.
+
+  All drawing goes through the `Dc` shim below, which mirrors Toybox.Graphics.Dc method names and
+  semantics (degrees counter-clockwise from 3 o'clock, justify flags, 64-point polygons), so the
+  Monkey C port stays mechanical. Every frame is snapped to the 64-color MIP palette.
+
+  Run: open prototype/index.html
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PROTOTYPE · Tachometer watch face</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; background: #161616; color: #ddd; font: 13px/1.4 -apple-system, system-ui, sans-serif; }
+  header { padding: 10px 16px; border-bottom: 1px solid #333; }
+  header b { color: #f50; }
+  main { display: flex; flex-wrap: wrap; gap: 32px; padding: 24px 24px 80px; align-items: flex-start; }
+  .watch { border-radius: 50%; image-rendering: pixelated; background: #000;
+           box-shadow: 0 0 0 10px #2a2a2a, 0 0 0 12px #444; }
+  #big { width: 780px; height: 780px; }
+  #small { width: 260px; height: 260px; margin: 12px auto 8px; }
+  .side { display: flex; flex-direction: column; gap: 10px; width: 330px; }
+  fieldset { border: 1px solid #333; border-radius: 6px; padding: 6px 10px 8px; margin: 0; }
+  legend { color: #999; padding: 0 4px; }
+  label { display: flex; align-items: center; gap: 8px; margin: 3px 0; }
+  label > :first-child { flex: 1; }
+  input[type=range] { width: 140px; }
+  .val { width: 42px; text-align: right; font-variant-numeric: tabular-nums; color: #aaa; }
+  button { cursor: pointer; }
+  pre { background: #0c0c0c; border: 1px solid #333; border-radius: 6px; padding: 8px; margin: 0;
+        font-size: 11px; white-space: pre-wrap; }
+  #switcher { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 10;
+              display: flex; gap: 10px; align-items: center; padding: 6px 10px; border-radius: 999px;
+              background: #fff; color: #000; font-weight: 600; box-shadow: 0 4px 16px rgba(0, 0, 0, .6); }
+  #switcher button { border: 0; background: #000; color: #fff; border-radius: 50%; width: 28px; height: 28px; }
+</style>
+</head>
+<body>
+<header>
+  <b>PROTOTYPE</b> (throwaway): tachometer watch face for fenix 7 Pro 47mm, 260×260 MIP.
+  Left: 3× zoom. Right: 1×. Colors snapped to the 64-color palette. ← → switch layout variant.
+</header>
+<main>
+  <canvas id="big" class="watch" width="780" height="780"></canvas>
+  <div class="side">
+    <canvas id="small" class="watch" width="260" height="260"></canvas>
+
+    <fieldset><legend>Time</legend>
+      <label><span>Time of day</span><input id="scrub" type="range" min="0" max="86399" step="1"><span class="val" id="scrubVal"></span></label>
+      <label><span>Speed</span>
+        <select data-key="speed" data-num><option value="1">1×</option><option value="60">60×</option><option value="3600">3600×</option></select>
+        <button id="play">Pause</button><button id="now">Now</button></label>
+    </fieldset>
+
+    <fieldset><legend>Power</legend>
+      <label><span>Awake</span><input type="checkbox" data-key="awake"></label>
+      <label><button id="wrist">Raise wrist (10 s)</button><button id="budget">Exceed power budget</button></label>
+    </fieldset>
+
+    <fieldset><legend>Watch face settings (Garmin Connect app)</legend>
+      <label><span>Minute Style</span>
+        <select data-key="minuteStyle"><option value="needle">Needle</option><option value="sweep">Sweep</option><option value="sweepTip">Sweep + Tip</option></select></label>
+      <label><span id="topSlotLabel">Top Slot</span><select class="readout" data-key="slots.top"></select></label>
+      <label><span>Left Slot</span><select class="readout" data-key="slots.left"></select></label>
+      <label><span>Right Slot</span><select class="readout" data-key="slots.right"></select></label>
+      <label><span>Bottom Slot</span><select class="readout" data-key="slots.bottom"></select></label>
+      <label><span>Weather temperature</span>
+        <select data-key="weatherTemp"><option value="feelsLike">Feels like</option><option value="actual">Actual</option></select></label>
+      <label><span>Always-on Rev Bar</span><input type="checkbox" data-key="alwaysOnRevBar"></label>
+    </fieldset>
+
+    <fieldset><legend>Prototype only</legend>
+      <label><span>Numeral font</span>
+        <select data-key="font"><option value="din">DIN condensed</option><option value="seg7">7-segment</option></select></label>
+    </fieldset>
+
+    <fieldset><legend>Watch system settings</legend>
+      <label><span>24-hour time</span><input type="checkbox" data-key="is24"></label>
+      <label><span>Metric units</span><input type="checkbox" data-key="metric"></label>
+    </fieldset>
+
+    <fieldset><legend>Fake data</legend>
+      <label><span>Battery %</span><input type="range" min="0" max="100" data-key="battery"><span class="val"></span></label>
+      <label><span>Solar intensity</span><input type="range" min="0" max="100" data-key="solar"><span class="val"></span></label>
+      <label><span>Cable charging</span><input type="checkbox" data-key="charging"></label>
+      <label><span>Steps (goal 10000)</span><input type="range" min="0" max="30000" data-key="steps"><span class="val"></span></label>
+      <label><span>Heart rate (0 = none)</span><input type="range" min="0" max="200" data-key="hr"><span class="val"></span></label>
+      <label><span>Body Battery</span><input type="range" min="0" max="100" data-key="bodyBattery"><span class="val"></span></label>
+      <label><span>Weather synced</span><input type="checkbox" data-key="weatherOk"></label>
+      <label><span>Condition</span>
+        <select data-key="cond"><option value="clear">Clear</option><option value="partlyCloudy">Partly cloudy</option>
+          <option value="cloudy">Cloudy</option><option value="rain">Rain</option><option value="snow">Snow</option>
+          <option value="thunder">Thunder</option><option value="fog">Fog</option></select></label>
+      <label><span>Temperature °C</span><input type="range" min="-30" max="45" data-key="tempC"><span class="val"></span></label>
+      <label><span>Feels like °C</span><input type="range" min="-30" max="45" data-key="feelsLikeC"><span class="val"></span></label>
+      <label><span>Notifications</span><input type="range" min="0" max="20" data-key="notif"><span class="val"></span></label>
+    </fieldset>
+
+    <pre id="state"></pre>
+  </div>
+</main>
+<div id="switcher"><button id="prev">←</button><span id="vlabel"></span><button id="next">→</button></div>
+
+<script>
+'use strict';
+
+// ---- Screen, palette, Garmin constants --------------------------------------------------------
+const W = 260, H = 260, CX = 130, CY = 130, R = 130;
+
+// Toybox.Graphics colors; all of them sit inside the 64-color MIP palette.
+const COLOR_WHITE = 0xFFFFFF, COLOR_LT_GRAY = 0xAAAAAA, COLOR_DK_GRAY = 0x555555, COLOR_BLACK = 0x000000;
+const COLOR_RED = 0xFF0000, COLOR_ORANGE = 0xFF5500, COLOR_YELLOW = 0xFFAA00;
+const COLOR_GREEN = 0x00FF00, COLOR_BLUE = 0x00AAFF;
+const ARC_COUNTER_CLOCKWISE = 0, ARC_CLOCKWISE = 1;
+const TEXT_JUSTIFY_RIGHT = 0, TEXT_JUSTIFY_CENTER = 1, TEXT_JUSTIFY_LEFT = 2, TEXT_JUSTIFY_VCENTER = 4;
+const JUSTIFY_MIDDLE = TEXT_JUSTIFY_CENTER | TEXT_JUSTIFY_VCENTER;
+const JUSTIFY_LEFT_MIDDLE = TEXT_JUSTIFY_LEFT | TEXT_JUSTIFY_VCENTER;
+
+// Theme.
+const C_SCALE = COLOR_WHITE, C_MINUTE = COLOR_YELLOW, C_REDLINE = COLOR_RED;
+const C_REDLINE_UNLIT = 0x550000, C_UNLIT = COLOR_DK_GRAY;
+
+// ---- Geometry, all offsets from the screen radius ---------------------------------------------
+const R_BAND = R - 6, BAND_W = 8;                 // Sweep band and Fuel Gauge, 120–128 px
+const R_TICK = R - 11;                            // outer end of the ticks
+const TICKS = { major: [12, 3], mid: [8, 2], minor: [4, 1] };  // [length, pen width]
+const R_NUM = R - 34;
+const R_REV = R - 50, REV_W = 3;
+const FUEL_FROM = 235, FUEL_SPAN = 70, FUEL_SEGS = 10;         // degrees, centered on 6 o'clock
+
+const minuteDeg = m => 180 - m * 3;               // 0 at 9 o'clock, 30 at 12, 60 at 3 o'clock
+const polar = (deg, r) => [CX + r * Math.cos(deg * Math.PI / 180), CY - r * Math.sin(deg * Math.PI / 180)];
+
+// ---- Dc shim: Toybox.Graphics.Dc names and semantics on top of canvas 2D ----------------------
+class Dc {
+  constructor(ctx) { this.ctx = ctx; this.fg = COLOR_WHITE; this.bg = COLOR_BLACK; this.pen = 1; }
+  static css(c) { return '#' + c.toString(16).padStart(6, '0'); }
+  setColor(fg, bg) { this.fg = fg; if (bg !== undefined) this.bg = bg; }
+  setPenWidth(w) { this.pen = w; }
+  clear() { this.ctx.fillStyle = Dc.css(this.bg); this.ctx.fillRect(0, 0, W, H); }
+  setClip(x, y, w, h) { this.ctx.save(); this.ctx.beginPath(); this.ctx.rect(x, y, w, h); this.ctx.clip(); }
+  clearClip() { this.ctx.restore(); }
+  _stroke() { const c = this.ctx; c.strokeStyle = Dc.css(this.fg); c.lineWidth = this.pen; c.lineCap = 'butt'; c.stroke(); }
+  _fill() { this.ctx.fillStyle = Dc.css(this.fg); this.ctx.fill(); }
+  drawLine(x1, y1, x2, y2) { const c = this.ctx; c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); this._stroke(); }
+  drawArc(x, y, r, attr, degStart, degEnd) {
+    const c = this.ctx, k = Math.PI / 180;
+    c.beginPath(); c.arc(x, y, r, -degStart * k, -degEnd * k, attr === ARC_COUNTER_CLOCKWISE); this._stroke();
+  }
+  drawCircle(x, y, r) { const c = this.ctx; c.beginPath(); c.arc(x, y, r, 0, 2 * Math.PI); this._stroke(); }
+  fillCircle(x, y, r) { const c = this.ctx; c.beginPath(); c.arc(x, y, r, 0, 2 * Math.PI); this._fill(); }
+  fillEllipse(x, y, a, b) { const c = this.ctx; c.beginPath(); c.ellipse(x, y, a, b, 0, 0, 2 * Math.PI); this._fill(); }
+  drawRectangle(x, y, w, h) { const c = this.ctx; c.beginPath(); c.rect(x, y, w, h); this._stroke(); }
+  fillRectangle(x, y, w, h) { const c = this.ctx; c.beginPath(); c.rect(x, y, w, h); this._fill(); }
+  fillPolygon(pts) {
+    if (pts.length > 64) console.warn('fillPolygon: the device limit is 64 points');
+    const c = this.ctx; c.beginPath(); c.moveTo(pts[0][0], pts[0][1]);
+    for (let i = 1; i < pts.length; i++) c.lineTo(pts[i][0], pts[i][1]);
+    c.closePath(); this._fill();
+  }
+  getTextWidthInPixels(text, font) {
+    if (font.kind === 'seg7') return seg7Width(String(text), font);
+    this.ctx.font = font.css; return this.ctx.measureText(String(text)).width;
+  }
+  fontHeight(font) {
+    if (font.kind === 'seg7') return font.h;
+    this.ctx.font = font.css; return this.ctx.measureText('0').actualBoundingBoxAscent;
+  }
+  drawText(x, y, font, text, justify) {
+    text = String(text);
+    const w = this.getTextWidthInPixels(text, font), h = justify & 3;
+    const left = h === TEXT_JUSTIFY_CENTER ? x - w / 2 : h === TEXT_JUSTIFY_RIGHT ? x - w : x;
+    const capH = this.fontHeight(font);
+    const top = justify & TEXT_JUSTIFY_VCENTER ? y - capH / 2 : y;
+    if (font.kind === 'seg7') { drawSeg7(this, left, top, font, text); return; }
+    const c = this.ctx; c.font = font.css; c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+    c.fillStyle = Dc.css(this.fg); c.fillText(text, left, top + capH);
+  }
+}
+
+// ---- 7-segment numerals, built from fillPolygon the way a bitmap font would be drawn ----------
+const SEG7 = { 0: 'abcdef', 1: 'bc', 2: 'abdeg', 3: 'abcdg', 4: 'bcfg', 5: 'acdfg', 6: 'acdefg',
+               7: 'abc', 8: 'abcdefg', 9: 'abcdfg', '-': 'g' };
+function seg7Width(text, f) {
+  let w = 0;
+  for (const ch of text) w += (SEG7[ch] ? f.w : f.w * 0.5) + f.gap;
+  return Math.max(0, w - f.gap);
+}
+function drawSeg7(dc, left, top, f, text) {
+  let x = left;
+  for (const ch of text) {
+    if (SEG7[ch]) seg7Digit(dc, x, top, f, SEG7[ch]);
+    x += (SEG7[ch] ? f.w : f.w * 0.5) + f.gap;
+  }
+}
+function seg7Digit(dc, x, y, f, segs) {
+  const t = f.t, g = t * 0.3, cy = y + f.h / 2;
+  const xl = x + t / 2, xr = x + f.w - t / 2, yt = y + t / 2, ym = y + f.h / 2, yb = y + f.h - t / 2;
+  const hSeg = (x0, x1, yc) => [[x0, yc], [x0 + t / 2, yc - t / 2], [x1 - t / 2, yc - t / 2], [x1, yc], [x1 - t / 2, yc + t / 2], [x0 + t / 2, yc + t / 2]];
+  const vSeg = (xc, y0, y1) => [[xc, y0], [xc + t / 2, y0 + t / 2], [xc + t / 2, y1 - t / 2], [xc, y1], [xc - t / 2, y1 - t / 2], [xc - t / 2, y0 + t / 2]];
+  const shapes = {
+    a: hSeg(xl + g, xr - g, yt), g: hSeg(xl + g, xr - g, ym), d: hSeg(xl + g, xr - g, yb),
+    f: vSeg(xl, yt + g, ym - g), b: vSeg(xr, yt + g, ym - g), e: vSeg(xl, ym + g, yb - g), c: vSeg(xr, ym + g, yb - g),
+  };
+  for (const s of segs) dc.fillPolygon(shapes[s].map(([px, py]) => [px + (cy - py) * f.skew, py]));
+}
+
+// ---- Fonts and variants -----------------------------------------------------------------------
+const DIN = '"DIN Condensed", "Barlow Condensed", "Arial Narrow", sans-serif';
+const cssFont = px => ({ kind: 'css', css: `bold ${px}px ${DIN}` });
+const segFont = h => ({ kind: 'seg7', h, w: Math.round(h * 0.56), t: Math.max(2.2, h * 0.14),
+                        gap: Math.max(2, Math.round(h * 0.13)), skew: 0.12 });
+const FONTS = {
+  din: { name: 'DIN condensed', gear: cssFont(89), num: cssFont(24) },
+  seg7: { name: '7-segment', gear: segFont(64), num: segFont(17) },
+};
+
+// Layout variants. Slot keys stay the same so the settings carry over; in B the Top Slot sits in
+// the center row where the Gear was, and the Needle floats outside the Rev Bar instead of crossing
+// the Gear.
+const VARIANTS = [
+  { key: 'A', name: 'Gear below center', gear: [CX, CY + 40], ampmBelow: false, floatingNeedle: false,
+    slots: { top: [CX, CY - 32], left: [CX - 70, CY + 38], right: [CX + 70, CY + 38], bottom: [CX, CY + 84] },
+    stacked: ['left', 'right'], topSlotName: 'Top Slot' },
+  { key: 'B', name: 'Gear inside Tachometer', gear: [CX, CY - 36], ampmBelow: true, floatingNeedle: true,
+    slots: { top: [CX, CY + 38], left: [CX - 70, CY + 38], right: [CX + 70, CY + 38], bottom: [CX, CY + 84] },
+    stacked: ['top', 'left', 'right'], topSlotName: 'Center Slot' },
+];
+const F_VALUE = cssFont(20), F_HEAD = cssFont(15), F_SMALL = cssFont(13);
+
+// ---- Simulated watch state ---------------------------------------------------------------------
+const S = {
+  t: new Date(), playing: true, speed: 1,
+  awake: true, wakeUntil: 0, budgetExceeded: false, font: 'din',
+  // The seven watch face settings.
+  minuteStyle: 'sweepTip', alwaysOnRevBar: false, weatherTemp: 'feelsLike',
+  slots: { top: 'date', left: 'steps', right: 'heartRate', bottom: 'weather' },
+  // Watch system settings.
+  is24: true, metric: true,
+  // Fake sensor and service data.
+  battery: 76, solar: 0, charging: false, steps: 8412, stepGoal: 10000, hr: 62, bodyBattery: 54,
+  weatherOk: true, cond: 'partlyCloudy', tempC: 18, feelsLikeC: 15, notif: 2, sunrise: 6 * 60 + 42, sunset: 18 * 60 + 49,
+};
+const revBarVisible = s => s.awake || (s.alwaysOnRevBar && !s.budgetExceeded);
+
+// ---- Face ---------------------------------------------------------------------------------------
+function drawFace(dc, s, v, f) {
+  const m = s.t.getMinutes();
+  dc.setColor(COLOR_WHITE, COLOR_BLACK); dc.clear();
+  drawTachometer(dc, s, f, m);
+  if (revBarVisible(s)) drawRevBar(dc, s.t.getSeconds());
+  drawGear(dc, s, v, f);
+  for (const [name, pos] of Object.entries(v.slots)) {
+    drawSlot(dc, pos, !v.stacked.includes(name), READOUTS[s.slots[name]](s));
+  }
+  drawFuelGauge(dc, s);
+  if (s.minuteStyle === 'needle') drawNeedle(dc, m, v.floatingNeedle);
+}
+
+function drawTachometer(dc, s, f, m) {
+  dc.setPenWidth(BAND_W);
+  dc.setColor(C_REDLINE_UNLIT);
+  dc.drawArc(CX, CY, R_BAND, ARC_CLOCKWISE, minuteDeg(50), minuteDeg(60));
+  if (s.minuteStyle !== 'needle' && m > 0) {
+    dc.setColor(C_MINUTE);
+    dc.drawArc(CX, CY, R_BAND, ARC_CLOCKWISE, minuteDeg(0), minuteDeg(Math.min(m, 50)));
+    if (m > 50) {
+      dc.setColor(C_REDLINE);
+      dc.drawArc(CX, CY, R_BAND, ARC_CLOCKWISE, minuteDeg(50), minuteDeg(m));
+    }
+  }
+  for (let i = 0; i <= 60; i++) {
+    const [len, pen] = i % 10 === 0 ? TICKS.major : i % 5 === 0 ? TICKS.mid : TICKS.minor;
+    const [x1, y1] = polar(minuteDeg(i), R_TICK), [x2, y2] = polar(minuteDeg(i), R_TICK - len);
+    dc.setColor(i >= 50 ? C_REDLINE : C_SCALE); dc.setPenWidth(pen); dc.drawLine(x1, y1, x2, y2);
+  }
+  for (let n = 0; n <= 6; n++) {
+    const [x, y] = polar(minuteDeg(n * 10), R_NUM);
+    dc.setColor(n >= 5 ? C_REDLINE : C_SCALE); dc.drawText(x, y, f.num, n, JUSTIFY_MIDDLE);
+  }
+  if (s.minuteStyle === 'sweepTip') {
+    const [x1, y1] = polar(minuteDeg(m), R_TICK - 8), [x2, y2] = polar(minuteDeg(m), R);
+    dc.setColor(COLOR_WHITE); dc.setPenWidth(3); dc.drawLine(x1, y1, x2, y2);
+  }
+}
+
+// A floating Needle starts just outside the Rev Bar and has no hub, so it never crosses the Gear.
+function drawNeedle(dc, m, floating) {
+  const a = minuteDeg(m) * Math.PI / 180, ux = Math.cos(a), uy = -Math.sin(a), px = -uy, py = ux;
+  const r0 = floating ? R_REV + 4 : 0, w0 = floating ? 2.5 : 3.5;
+  const bx = CX + ux * r0, by = CY + uy * r0, tx = CX + ux * (R - 8), ty = CY + uy * (R - 8);
+  dc.setColor(m >= 50 ? C_REDLINE : C_MINUTE);
+  dc.fillPolygon([[bx + px * w0, by + py * w0], [tx + px, ty + py], [tx - px, ty - py], [bx - px * w0, by - py * w0]]);
+  if (floating) return;
+  dc.fillCircle(CX, CY, 7);
+  dc.setColor(COLOR_BLACK); dc.fillCircle(CX, CY, 2.5);
+}
+
+// One segment per second; on the watch, onPartialUpdate draws only the newest one.
+function drawRevBar(dc, sec) {
+  dc.setPenWidth(REV_W);
+  for (let i = 0; i <= sec; i++) {
+    dc.setColor(i >= 50 ? C_REDLINE : COLOR_WHITE);
+    dc.drawArc(CX, CY, R_REV, ARC_CLOCKWISE, minuteDeg(i) - 0.6, minuteDeg(i + 1) + 0.6);
+  }
+}
+
+const gearText = s => { const h = s.t.getHours(); return String(s.is24 ? h : h % 12 || 12); };
+function drawGear(dc, s, v, f) {
+  const text = gearText(s), [gx, gy] = v.gear;
+  dc.setColor(COLOR_WHITE); dc.drawText(gx, gy, f.gear, text, JUSTIFY_MIDDLE);
+  if (s.is24) return;
+  const ampm = s.t.getHours() < 12 ? 'AM' : 'PM', w = dc.getTextWidthInPixels(text, f.gear), capH = dc.fontHeight(f.gear);
+  dc.setColor(COLOR_LT_GRAY);
+  if (v.ampmBelow) dc.drawText(gx, gy + capH / 2 + 9, F_SMALL, ampm, JUSTIFY_MIDDLE);
+  else dc.drawText(gx + w / 2 + 4, gy - capH / 2 + 6, F_SMALL, ampm, JUSTIFY_LEFT_MIDDLE);
+}
+
+const ICON = 14;
+function drawSlot(dc, [x, y], inline, r) {
+  if (!r) return;
+  const valueColor = r.color ?? COLOR_WHITE, iconColor = r.iconColor ?? COLOR_WHITE;
+  if (inline) {
+    const lead = r.head ? dc.getTextWidthInPixels(r.head, F_HEAD) : ICON;
+    const x0 = x - (lead + 5 + dc.getTextWidthInPixels(r.text, F_VALUE)) / 2;
+    if (r.head) { dc.setColor(COLOR_LT_GRAY); dc.drawText(x0, y, F_HEAD, r.head, JUSTIFY_LEFT_MIDDLE); }
+    else r.icon(dc, x0 + ICON / 2, y, iconColor);
+    dc.setColor(valueColor); dc.drawText(x0 + lead + 5, y, F_VALUE, r.text, JUSTIFY_LEFT_MIDDLE);
+  } else {
+    if (r.head) { dc.setColor(COLOR_LT_GRAY); dc.drawText(x, y - 11, F_HEAD, r.head, JUSTIFY_MIDDLE); }
+    else r.icon(dc, x, y - 11, iconColor);
+    dc.setColor(valueColor); dc.drawText(x, y + 10, F_VALUE, r.text, JUSTIFY_MIDDLE);
+  }
+}
+
+function drawFuelGauge(dc, s) {
+  const lit = Math.round(s.battery / 10), seg = FUEL_SPAN / FUEL_SEGS;
+  dc.setPenWidth(BAND_W);
+  for (let i = 0; i < FUEL_SEGS; i++) {
+    dc.setColor(i < lit ? COLOR_WHITE : C_UNLIT);
+    dc.drawArc(CX, CY, R_BAND, ARC_COUNTER_CLOCKWISE, FUEL_FROM + i * seg + 0.8, FUEL_FROM + (i + 1) * seg - 0.8);
+  }
+  const [lx, ly] = polar(FUEL_FROM - 12, R_BAND - 10);
+  iconPump(dc, lx, ly, lowFuelLampColor(s.battery));
+  const [rx, ry] = polar(FUEL_FROM + FUEL_SPAN + 12, R_BAND - 10);
+  if (s.charging) iconBolt(dc, rx, ry, COLOR_GREEN);
+  else if (s.solar > 0) iconSun(dc, rx, ry, COLOR_YELLOW, 3);
+}
+const lowFuelLampColor = b => b <= 10 ? COLOR_RED : b <= 20 ? COLOR_YELLOW : COLOR_DK_GRAY;
+
+// ---- Readouts -----------------------------------------------------------------------------------
+const DOW = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+const pad2 = n => String(n).padStart(2, '0');
+const fmtClock = (min, is24) => {
+  const h = Math.floor(min / 60), mm = pad2(min % 60);
+  return is24 ? `${pad2(h)}:${mm}` : `${h % 12 || 12}:${mm}`;
+};
+// On the watch these are CurrentConditions.feelsLikeTemperature and .temperature, both Celsius.
+const fmtTemp = s => {
+  const c = s.weatherTemp === 'feelsLike' ? s.feelsLikeC : s.tempC;
+  return `${s.metric ? c : Math.round(c * 9 / 5 + 32)}°`;
+};
+function nextSunEvent(s) {
+  const now = s.t.getHours() * 60 + s.t.getMinutes();
+  if (now < s.sunrise) return { rise: true, min: s.sunrise };
+  if (now < s.sunset) return { rise: false, min: s.sunset };
+  return { rise: true, min: s.sunrise };
+}
+
+// Each Readout returns { icon | head, text, iconColor?, color? }, or null for an empty Slot.
+const READOUTS = {
+  date: s => ({ head: DOW[s.t.getDay()], text: String(s.t.getDate()) }),
+  steps: s => ({ icon: iconSteps, iconColor: s.steps >= s.stepGoal ? COLOR_GREEN : COLOR_WHITE, text: String(s.steps) }),
+  weather: s => s.weatherOk
+    ? { icon: WEATHER[s.cond], text: fmtTemp(s) }
+    : { icon: iconCloud, iconColor: COLOR_DK_GRAY, text: '--' },
+  heartRate: s => ({ icon: iconHeart, iconColor: COLOR_RED, text: s.hr > 0 ? String(s.hr) : '--' }),
+  bodyBattery: s => ({ icon: (dc, x, y, c) => iconBodyBattery(dc, x, y, c, s.bodyBattery / 100), iconColor: COLOR_BLUE, text: String(s.bodyBattery) }),
+  sun: s => {
+    const e = nextSunEvent(s);
+    return { icon: (dc, x, y, c) => iconSunEvent(dc, x, y, c, e.rise), iconColor: COLOR_YELLOW, text: fmtClock(e.min, s.is24) };
+  },
+  notifications: s => {
+    const c = s.notif > 0 ? COLOR_WHITE : COLOR_DK_GRAY;
+    return { icon: iconBell, iconColor: c, color: c, text: String(s.notif) };
+  },
+  battery: s => ({ icon: (dc, x, y, c) => iconBattery(dc, x, y, c, s.battery / 100), text: `${Math.round(s.battery)}%` }),
+  empty: () => null,
+};
+const READOUT_NAMES = { date: 'Date', steps: 'Steps', weather: 'Weather', heartRate: 'Heart rate', bodyBattery: 'Body Battery',
+                        sun: 'Sunrise/sunset', notifications: 'Notifications', battery: 'Battery %', empty: 'Empty' };
+
+// ---- Icons, about 14 px, centered on (x, y), drawn with Dc primitives only ----------------------
+function iconSun(dc, x, y, c, r = 3.6) {
+  dc.setColor(c); dc.fillCircle(x, y, r); dc.setPenWidth(1.5);
+  for (let i = 0; i < 8; i++) {
+    const a = i * Math.PI / 4, cos = Math.cos(a), sin = Math.sin(a);
+    dc.drawLine(x + cos * (r + 1.6), y + sin * (r + 1.6), x + cos * (r + 3.8), y + sin * (r + 3.8));
+  }
+}
+function iconCloud(dc, x, y, c) {
+  dc.setColor(c);
+  dc.fillCircle(x - 3.5, y + 1.5, 3.2); dc.fillCircle(x + 0.5, y - 1, 4.2); dc.fillCircle(x + 4.2, y + 1.8, 2.9);
+  dc.fillRectangle(x - 3.5, y + 1.5, 7.7, 3.2);
+}
+const WEATHER = {
+  clear: (dc, x, y) => iconSun(dc, x, y, COLOR_YELLOW),
+  partlyCloudy: (dc, x, y) => { iconSun(dc, x + 2.5, y - 2.5, COLOR_YELLOW, 2.8); iconCloud(dc, x - 1, y + 1.5, COLOR_WHITE); },
+  cloudy: (dc, x, y) => iconCloud(dc, x, y, COLOR_LT_GRAY),
+  rain: (dc, x, y) => {
+    iconCloud(dc, x, y - 3, COLOR_LT_GRAY); dc.setColor(COLOR_BLUE); dc.setPenWidth(1.5);
+    for (const dx of [-4, 0, 4]) dc.drawLine(x + dx, y + 4, x + dx - 1.5, y + 7.5);
+  },
+  snow: (dc, x, y) => {
+    iconCloud(dc, x, y - 3, COLOR_LT_GRAY); dc.setColor(COLOR_WHITE);
+    for (const dx of [-4, 0, 4]) dc.fillCircle(x + dx, y + 6, 1.2);
+  },
+  thunder: (dc, x, y) => {
+    iconCloud(dc, x, y - 3, COLOR_LT_GRAY); dc.setColor(COLOR_YELLOW);
+    dc.fillPolygon([[x + 1, y + 1], [x - 2.5, y + 5], [x, y + 5], [x - 1, y + 8.5], [x + 2.5, y + 4], [x, y + 4]]);
+  },
+  fog: (dc, x, y) => {
+    dc.setColor(COLOR_LT_GRAY); dc.setPenWidth(2);
+    for (const dy of [-4, 0, 4]) dc.drawLine(x - 6, y + dy, x + 6, y + dy);
+  },
+};
+function iconHeart(dc, x, y, c) {
+  dc.setColor(c);
+  dc.fillCircle(x - 3.2, y - 2, 3.6); dc.fillCircle(x + 3.2, y - 2, 3.6);
+  dc.fillPolygon([[x - 6.7, y - 0.8], [x + 6.7, y - 0.8], [x, y + 6.5]]);
+}
+function iconSteps(dc, x, y, c) {
+  dc.setColor(c);
+  dc.fillEllipse(x - 3.5, y - 0.5, 2.5, 4); dc.fillCircle(x - 3.5, y + 5.2, 1.7);
+  dc.fillEllipse(x + 3.5, y - 3.5, 2.5, 4); dc.fillCircle(x + 3.5, y + 2.2, 1.7);
+}
+function iconBell(dc, x, y, c) {
+  dc.setColor(c);
+  dc.fillCircle(x, y - 6.5, 1.2);
+  dc.fillCircle(x, y - 1.5, 4.5);
+  dc.fillRectangle(x - 4.5, y - 1.5, 9, 4.5);
+  dc.fillPolygon([[x - 4.5, y + 2.5], [x + 4.5, y + 2.5], [x + 6.5, y + 4.5], [x - 6.5, y + 4.5]]);
+  dc.fillCircle(x, y + 6, 1.6);
+}
+function iconBattery(dc, x, y, c, level) {
+  dc.setColor(c); dc.setPenWidth(1);
+  dc.drawRectangle(x - 6.5, y - 3.5, 12, 7);
+  dc.fillRectangle(x + 5.5, y - 1.5, 1.5, 3);
+  dc.fillRectangle(x - 5, y - 2, 9 * level, 4);
+}
+function iconBodyBattery(dc, x, y, c, level) {
+  dc.setColor(c); dc.setPenWidth(1);
+  dc.drawRectangle(x - 3.5, y - 5.5, 7, 12);
+  dc.fillRectangle(x - 1.5, y - 7, 3, 1.5);
+  const h = 9 * level; dc.fillRectangle(x - 2, y + 5 - h, 4, h);
+}
+function iconSunEvent(dc, x, y, c, rise) {
+  dc.setColor(c);
+  dc.setClip(x - 8, y - 8, 16, 11); dc.fillCircle(x, y + 3, 4.5); dc.clearClip();
+  dc.setPenWidth(1.5); dc.drawLine(x - 7, y + 4, x + 7, y + 4);
+  dc.fillPolygon(rise ? [[x, y - 8], [x - 3, y - 4.5], [x + 3, y - 4.5]] : [[x, y - 4.5], [x - 3, y - 8], [x + 3, y - 8]]);
+}
+function iconPump(dc, x, y, c) {
+  dc.setColor(c);
+  dc.fillRectangle(x - 5, y - 6, 7, 12);
+  dc.fillRectangle(x - 6.5, y + 5, 10, 2);
+  dc.setColor(COLOR_BLACK); dc.fillRectangle(x - 3.5, y - 4.5, 4, 3);
+  dc.setColor(c); dc.setPenWidth(1.5);
+  dc.drawLine(x + 2, y - 4, x + 4.5, y - 4);
+  dc.drawLine(x + 4.5, y - 4, x + 5.5, y - 2);
+  dc.drawLine(x + 5.5, y - 2, x + 5.5, y + 3);
+  dc.drawLine(x + 5.5, y + 3, x + 2, y + 3);
+}
+function iconBolt(dc, x, y, c) {
+  dc.setColor(c);
+  dc.fillPolygon([[x + 2, y - 7], [x - 4, y + 1], [x - 0.5, y + 1], [x - 2, y + 7], [x + 4, y - 1], [x + 0.5, y - 1]]);
+}
+
+// ---- Rendering: draw at 260 px, snap to the MIP palette, then scale up without smoothing ---------
+const off = document.createElement('canvas'); off.width = W; off.height = H;
+const offCtx = off.getContext('2d', { willReadFrequently: true });
+const dc = new Dc(offCtx);
+const views = [document.getElementById('big'), document.getElementById('small')];
+const stateEl = document.getElementById('state');
+
+function snapToMipPalette(ctx) {
+  const img = ctx.getImageData(0, 0, W, H), d = img.data;
+  for (let i = 0; i < d.length; i += 4) {
+    d[i] = Math.round(d[i] / 85) * 85; d[i + 1] = Math.round(d[i + 1] / 85) * 85; d[i + 2] = Math.round(d[i + 2] / 85) * 85;
+    d[i + 3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+function render() {
+  const v = VARIANTS[vi], f = FONTS[S.font];
+  drawFace(dc, S, v, f);
+  snapToMipPalette(offCtx);
+  for (const cv of views) {
+    const c = cv.getContext('2d'); c.imageSmoothingEnabled = false; c.drawImage(off, 0, 0, cv.width, cv.height);
+  }
+  stateEl.textContent = describe(S, v, f);
+}
+
+function describe(s, v, f) {
+  const m = s.t.getMinutes(), sec = s.t.getSeconds(), b = Math.round(s.battery);
+  const rev = revBarVisible(s) ? `visible, ${sec + 1}/60 segments`
+    : s.alwaysOnRevBar ? 'hidden (power budget exceeded, until next wake)' : 'hidden (low power)';
+  const lamp = b <= 10 ? 'red' : b <= 20 ? 'amber' : 'grey';
+  const slot = k => { const r = READOUTS[s.slots[k]](s); return r ? `${k}=${r.head ? r.head + ' ' : ''}${r.text}` : `${k}=(empty)`; };
+  const power = s.awake ? (s.wakeUntil ? `awake, sleeps in ${Math.ceil((s.wakeUntil - Date.now()) / 1000)} s` : 'awake') : 'low power';
+  const fontOk = document.fonts.check('bold 20px "DIN Condensed"');
+  return [
+    `sim time    ${DOW[s.t.getDay()]} ${s.t.getDate()}  ${pad2(s.t.getHours())}:${pad2(m)}:${pad2(sec)}  ${s.playing ? `playing ${s.speed}×` : 'paused'}`,
+    `power       ${power}${s.budgetExceeded ? ', power budget exceeded' : ''}`,
+    `Tachometer  minute ${m} (${(m / 10).toFixed(1)} on the scale)${m >= 50 ? ', in the Redline' : ''}, Minute Style ${s.minuteStyle}`,
+    `Gear        ${gearText(s)}${s.is24 ? '' : s.t.getHours() < 12 ? ' AM' : ' PM'}`,
+    `Rev Bar     ${rev}`,
+    `Fuel Gauge  ${Math.round(s.battery / 10)}/10 segments at ${b}%, Low-Fuel Lamp ${lamp}, ${s.charging ? 'bolt' : s.solar > 0 ? 'sun' : 'no'} icon`,
+    `Slots       ${['top', 'left', 'right', 'bottom'].map(slot).join('  ')}  (weather shows ${s.weatherTemp === 'feelsLike' ? 'feels-like' : 'actual'} temperature)`,
+    `variant     ${v.key} (${v.name}), font ${f.name}${fontOk ? '' : ', DIN Condensed missing so a fallback font is in use'}`,
+  ].join('\n');
+}
+
+// ---- Controls -----------------------------------------------------------------------------------
+for (const sel of document.querySelectorAll('select.readout')) {
+  for (const [k, name] of Object.entries(READOUT_NAMES)) sel.add(new Option(name, k));
+}
+const getKey = k => k.split('.').reduce((o, p) => o[p], S);
+const setKey = (k, val) => { const ps = k.split('.'), last = ps.pop(); ps.reduce((o, p) => o[p], S)[last] = val; };
+const bound = [...document.querySelectorAll('[data-key]')];
+function syncControls() {
+  for (const el of bound) {
+    const val = getKey(el.dataset.key);
+    if (el.type === 'checkbox') el.checked = val; else el.value = val;
+    const out = el.nextElementSibling;
+    if (out && out.classList.contains('val')) out.textContent = val;
+  }
+}
+for (const el of bound) {
+  el.addEventListener('input', () => {
+    const k = el.dataset.key;
+    const val = el.type === 'checkbox' ? el.checked : el.type === 'range' || 'num' in el.dataset ? Number(el.value) : el.value;
+    setKey(k, val);
+    if (k === 'awake') { S.wakeUntil = 0; if (val) S.budgetExceeded = false; }
+    syncControls();
+  });
+}
+
+const scrub = document.getElementById('scrub'), scrubVal = document.getElementById('scrubVal');
+scrub.addEventListener('input', () => {
+  const d = new Date(S.t); d.setHours(0, 0, 0, 0);
+  S.t = new Date(d.getTime() + Number(scrub.value) * 1000);
+});
+const playBtn = document.getElementById('play');
+playBtn.onclick = () => { S.playing = !S.playing; playBtn.textContent = S.playing ? 'Pause' : 'Play'; };
+document.getElementById('now').onclick = () => { S.t = new Date(); };
+document.getElementById('wrist').onclick = () => {
+  S.awake = true; S.budgetExceeded = false; S.wakeUntil = Date.now() + 10000; syncControls();
+};
+document.getElementById('budget').onclick = () => { S.budgetExceeded = true; };
+
+// ---- Variant switcher ---------------------------------------------------------------------------
+// B won the layout round; it stays the default while the font is still being picked.
+let vi = Math.max(0, VARIANTS.findIndex(v => v.key === (new URLSearchParams(location.search).get('variant') ?? 'B')));
+function setVariant(i) {
+  vi = (i + VARIANTS.length) % VARIANTS.length;
+  document.getElementById('vlabel').textContent = `${VARIANTS[vi].key} (${VARIANTS[vi].name})`;
+  document.getElementById('topSlotLabel').textContent = VARIANTS[vi].topSlotName;
+  try {
+    const u = new URL(location.href); u.searchParams.set('variant', VARIANTS[vi].key); history.replaceState(null, '', u);
+  } catch { /* file:// pages may refuse replaceState; the variant still switches */ }
+}
+document.getElementById('prev').onclick = () => setVariant(vi - 1);
+document.getElementById('next').onclick = () => setVariant(vi + 1);
+addEventListener('keydown', e => {
+  if (e.target.closest && e.target.closest('input, textarea, select, [contenteditable]')) return;
+  if (e.key === 'ArrowLeft') setVariant(vi - 1);
+  else if (e.key === 'ArrowRight') setVariant(vi + 1);
+});
+
+// ---- Loop ---------------------------------------------------------------------------------------
+let last = performance.now();
+function tick(now) {
+  if (S.playing) S.t = new Date(S.t.getTime() + (now - last) * S.speed);
+  last = now;
+  if (S.wakeUntil && Date.now() >= S.wakeUntil) { S.wakeUntil = 0; S.awake = false; syncControls(); }
+  if (document.activeElement !== scrub) {
+    scrub.value = S.t.getHours() * 3600 + S.t.getMinutes() * 60 + S.t.getSeconds();
+  }
+  scrubVal.textContent = `${pad2(S.t.getHours())}:${pad2(S.t.getMinutes())}`;
+  render();
+  requestAnimationFrame(tick);
+}
+setVariant(vi);
+syncControls();
+render();
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>
