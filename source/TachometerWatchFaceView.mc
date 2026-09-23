@@ -50,6 +50,7 @@ class TachometerWatchFaceView extends WatchUi.WatchFace {
             Tachometer.drawNeedle(dc, minute);
         }
         Gear.draw(dc, _gearFont as Graphics.FontDefinition, _smallFont as Graphics.FontDefinition);
+        FuelGauge.draw(dc);
     }
 
     // Low power, once a second: draw only the newest Rev Bar segment, clipped.
