@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings>
+  <setting propertyKey="@Properties.MinuteStyle" title="@Strings.MinuteStyleTitle">
+    <settingConfig type="list">
+      <listEntry value="needle">@Strings.MinuteStyleNeedle</listEntry>
+      <listEntry value="sweep">@Strings.MinuteStyleSweep</listEntry>
+      <listEntry value="sweepTip">@Strings.MinuteStyleSweepTip</listEntry>
+    </settingConfig>
+  </setting>
+</settings>

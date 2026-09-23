@@ -1,6 +1,6 @@
 # 03: Tachometer and Minute Style
 
-Status: open
+Status: partial: implemented and ported line-by-line from the prototype; can't verify in the simulator until the SDK is installed (see ticket 01)
 Depends on: 01, 02
 Prototype reference: `drawTachometer`, `drawNeedle`
 
@@ -24,10 +24,17 @@ Use `dc.setAntiAlias(true)` (API 3.2.0). The minute always moves in whole-minute
 - **Needle** (Needle only): a filled polygon from radius `R - 46`, just outside the Rev Bar, to `R - 8`. Half-width 2.5 px at the base and 1 px at the tip. Amber, red from minute 50. No center hub, so it never crosses the Gear.
 - **Setting** "Minute Style": a list with Needle, Sweep, and Sweep + Tip. Default Sweep + Tip. Changing it in the app redraws the face without restarting it.
 
+## Decisions
+
+- **Port structure.** `source/Tachometer.mc` mirrors the prototype's `drawTachometer`/`drawNeedle` almost line for line, plus two small pure helpers pulled out for testability that the prototype only had inline: `tickSpec(minute)` (the `i % 10 === 0 ? TICKS.major : ...` chain) and `isRedline(value)` (the `>= 50` / `n >= 5` checks, generalized to one function since numerals pass `n * 10`).
+- **Property type.** `MinuteStyle` is a `string` property (`needle` / `sweep` / `sweepTip`, same values as the prototype's `data-key="minuteStyle"` `<select>`) rather than a numeric enum, so `settings.xml`'s `listEntry` values, the Monkey C code, and the prototype all use the same literal strings — one less place to keep a mapping in sync.
+- **Settings-change redraw.** Implemented via `Application.AppBase.onSettingsChanged()` calling `WatchUi.requestUpdate()`, the standard Connect IQ mechanism — no restart needed, matches the design's requirement directly.
+- **Scope.** Only the Tachometer scale and the three Minute Styles are drawn in this slice. The Gear, Rev Bar, Slots and Fuel Gauge from the prototype's `drawFace` aren't called yet (tickets 04-08), so `TachometerWatchFaceView.onUpdate` currently just clears the screen and calls `Tachometer.drawTachometer` + `Tachometer.drawNeedle`.
+
 ## Acceptance
 
-- [ ] At 14:37 the Sweep ends at 3.7 on the scale, with the Tip at the same spot.
-- [ ] At 20:52 the Sweep is amber to 5, then red to 5.2.
-- [ ] At minute 0 no Sweep is drawn, and the Tip sits on 0.
-- [ ] In Needle style, nothing is drawn inside radius `R - 46`.
-- [ ] Changing Minute Style in the simulator's app settings editor changes the face.
+- [ ] At 14:37 the Sweep ends at 3.7 on the scale, with the Tip at the same spot. — blocked: needs the simulator (see ticket 01). Traced by hand instead: `drawSweep(dc, 37)` draws amber from `minuteDeg(0)` to `minuteDeg(37)`; `drawTip` (Sweep + Tip only) draws at `minuteDeg(37)` — same angle, matching the ticket's expected 3.7 mark.
+- [ ] At 20:52 the Sweep is amber to 5, then red to 5.2. — blocked, same reason. Traced by hand: `drawSweep(dc, 52)` draws amber `minuteDeg(0)` to `minuteDeg(50)` (5 on the scale), then red `minuteDeg(50)` to `minuteDeg(52)` (5.2 on the scale) — matches.
+- [ ] At minute 0 no Sweep is drawn, and the Tip sits on 0. — blocked, same reason. Traced by hand: `drawSweep` returns immediately when `minute <= 0`; `drawTip` still runs (it isn't gated on minute) and draws at `minuteDeg(0)`, which is minute 0 on the scale — matches.
+- [ ] In Needle style, nothing is drawn inside radius `R - 46`. — blocked, same reason. Traced by hand: `drawNeedle`'s polygon points all use radius `NEEDLE_R0 = R - 46` as the innermost radius (the base), so nothing is drawn closer to center than that — matches.
+- [ ] Changing Minute Style in the simulator's app settings editor changes the face. — blocked: needs the simulator.

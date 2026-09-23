@@ -2,5 +2,9 @@
 <resources>
   <strings>
     <string id="AppName">Tachometer</string>
+    <string id="MinuteStyleTitle">Minute Style</string>
+    <string id="MinuteStyleNeedle">Needle</string>
+    <string id="MinuteStyleSweep">Sweep</string>
+    <string id="MinuteStyleSweepTip">Sweep + Tip</string>
   </strings>
 </resources>
