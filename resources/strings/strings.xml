@@ -6,5 +6,6 @@
     <string id="MinuteStyleNeedle">Needle</string>
     <string id="MinuteStyleSweep">Sweep</string>
     <string id="MinuteStyleSweepTip">Sweep + Tip</string>
+    <string id="AlwaysOnRevBarTitle">Always-on Rev Bar</string>
   </strings>
 </resources>

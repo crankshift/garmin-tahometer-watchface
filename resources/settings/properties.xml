@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <properties>
   <property id="MinuteStyle" type="number">2</property>
+  <property id="AlwaysOnRevBar" type="boolean">false</property>
 </properties>

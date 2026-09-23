@@ -7,4 +7,7 @@
       <listEntry value="2">@Strings.MinuteStyleSweepTip</listEntry>
     </settingConfig>
   </setting>
+  <setting propertyKey="@Properties.AlwaysOnRevBar" title="@Strings.AlwaysOnRevBarTitle">
+    <settingConfig type="boolean"/>
+  </setting>
 </settings>
