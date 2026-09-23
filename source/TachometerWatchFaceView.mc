@@ -6,6 +6,8 @@ import Toybox.WatchUi;
 
 class TachometerWatchFaceView extends WatchUi.WatchFace {
     private var _tachometerNumeralFont as Graphics.FontDefinition?;
+    private var _gearFont as Graphics.FontDefinition?;
+    private var _smallFont as Graphics.FontDefinition?;
 
     function initialize() {
         WatchFace.initialize();
@@ -13,6 +15,8 @@ class TachometerWatchFaceView extends WatchUi.WatchFace {
 
     function onLayout(dc as Graphics.Dc) as Void {
         _tachometerNumeralFont = WatchUi.loadResource(Rez.Fonts.TachometerNumeralFont) as Graphics.FontDefinition;
+        _gearFont = WatchUi.loadResource(Rez.Fonts.GearFont) as Graphics.FontDefinition;
+        _smallFont = WatchUi.loadResource(Rez.Fonts.SmallFont) as Graphics.FontDefinition;
     }
 
     function onUpdate(dc as Graphics.Dc) as Void {
@@ -27,5 +31,6 @@ class TachometerWatchFaceView extends WatchUi.WatchFace {
         if (minuteStyle == Tachometer.STYLE_NEEDLE) {
             Tachometer.drawNeedle(dc, minute);
         }
+        Gear.draw(dc, _gearFont as Graphics.FontDefinition, _smallFont as Graphics.FontDefinition);
     }
 }

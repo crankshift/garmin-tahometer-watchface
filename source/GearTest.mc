@@ -1,0 +1,37 @@
+import Toybox.Lang;
+import Toybox.Test;
+
+(:test)
+function testGearTextMidnight24Hour(logger as Test.Logger) as Boolean {
+    return Gear.gearText(0, true).equals("0");
+}
+
+(:test)
+function testGearTextMidnight12Hour(logger as Test.Logger) as Boolean {
+    return Gear.gearText(0, false).equals("12");
+}
+
+(:test)
+function testGearTextElevenIsUnchangedInBothModes(logger as Test.Logger) as Boolean {
+    return Gear.gearText(11, true).equals("11") && Gear.gearText(11, false).equals("11");
+}
+
+(:test)
+function testGearTextNoonTwelveHourStaysTwelve(logger as Test.Logger) as Boolean {
+    return Gear.gearText(12, true).equals("12") && Gear.gearText(12, false).equals("12");
+}
+
+(:test)
+function testGearTextThirteenDropsToOneInTwelveHour(logger as Test.Logger) as Boolean {
+    return Gear.gearText(13, true).equals("13") && Gear.gearText(13, false).equals("1");
+}
+
+(:test)
+function testGearTextTwentyThreeIsElevenInTwelveHour(logger as Test.Logger) as Boolean {
+    return Gear.gearText(23, true).equals("23") && Gear.gearText(23, false).equals("11");
+}
+
+(:test)
+function testIsAMBeforeNoon(logger as Test.Logger) as Boolean {
+    return Gear.isAM(0) && Gear.isAM(11) && !Gear.isAM(12) && !Gear.isAM(23);
+}
