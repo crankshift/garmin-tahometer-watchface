@@ -41,4 +41,36 @@ module Icons {
             [x - 2, y + 7], [x + 4, y - 1], [x + 0.5, y - 1]
         ]);
     }
+
+    function drawHeart(dc as Graphics.Dc, x as Float, y as Float, color as Graphics.ColorType) as Void {
+        dc.setColor(color, Graphics.COLOR_TRANSPARENT);
+        dc.fillCircle(x - 3.2, y - 2, 3.6);
+        dc.fillCircle(x + 3.2, y - 2, 3.6);
+        dc.fillPolygon([[x - 6.7, y - 0.8], [x + 6.7, y - 0.8], [x, y + 6.5]]);
+    }
+
+    function drawSteps(dc as Graphics.Dc, x as Float, y as Float, color as Graphics.ColorType) as Void {
+        dc.setColor(color, Graphics.COLOR_TRANSPARENT);
+        dc.fillEllipse(x - 3.5, y - 0.5, 2.5, 4);
+        dc.fillCircle(x - 3.5, y + 5.2, 1.7);
+        dc.fillEllipse(x + 3.5, y - 3.5, 2.5, 4);
+        dc.fillCircle(x + 3.5, y + 2.2, 1.7);
+    }
+
+    // level: 0.0 (empty) to 1.0 (full).
+    function drawBatteryLevel(dc as Graphics.Dc, x as Float, y as Float, color as Graphics.ColorType, level as Float) as Void {
+        dc.setColor(color, Graphics.COLOR_TRANSPARENT);
+        dc.setPenWidth(1);
+        dc.drawRectangle(x - 6.5, y - 3.5, 12, 7);
+        dc.fillRectangle(x + 5.5, y - 1.5, 1.5, 3);
+        dc.fillRectangle(x - 5, y - 2, 9 * level, 4);
+    }
+
+    function drawCloud(dc as Graphics.Dc, x as Float, y as Float, color as Graphics.ColorType) as Void {
+        dc.setColor(color, Graphics.COLOR_TRANSPARENT);
+        dc.fillCircle(x - 3.5, y + 1.5, 3.2);
+        dc.fillCircle(x + 0.5, y - 1, 4.2);
+        dc.fillCircle(x + 4.2, y + 1.8, 2.9);
+        dc.fillRectangle(x - 3.5, y + 1.5, 7.7, 3.2);
+    }
 }

@@ -8,6 +8,7 @@ class TachometerWatchFaceView extends WatchUi.WatchFace {
     private var _tachometerNumeralFont as Graphics.FontDefinition?;
     private var _gearFont as Graphics.FontDefinition?;
     private var _smallFont as Graphics.FontDefinition?;
+    private var _slotValueFont as Graphics.FontDefinition?;
 
     // Rev Bar power state (docs/tickets/05). Starts awake: the watch face only appears after
     // the user raises their wrist, and onEnterSleep fires once the system judges it idle.
@@ -22,6 +23,7 @@ class TachometerWatchFaceView extends WatchUi.WatchFace {
         _tachometerNumeralFont = WatchUi.loadResource(Rez.Fonts.TachometerNumeralFont) as Graphics.FontDefinition;
         _gearFont = WatchUi.loadResource(Rez.Fonts.GearFont) as Graphics.FontDefinition;
         _smallFont = WatchUi.loadResource(Rez.Fonts.SmallFont) as Graphics.FontDefinition;
+        _slotValueFont = WatchUi.loadResource(Rez.Fonts.SlotValueFont) as Graphics.FontDefinition;
     }
 
     // True while the Rev Bar should be running, awake or in low power with the setting on.
@@ -51,6 +53,15 @@ class TachometerWatchFaceView extends WatchUi.WatchFace {
         }
         Gear.draw(dc, _gearFont as Graphics.FontDefinition, _smallFont as Graphics.FontDefinition);
         FuelGauge.draw(dc);
+        Slots.draw(
+            dc,
+            Application.Properties.getValue("LeftSlotReadout") as Number,
+            Application.Properties.getValue("CenterSlotReadout") as Number,
+            Application.Properties.getValue("RightSlotReadout") as Number,
+            Application.Properties.getValue("BottomSlotReadout") as Number,
+            _smallFont as Graphics.FontDefinition,
+            _slotValueFont as Graphics.FontDefinition
+        );
     }
 
     // Low power, once a second: draw only the newest Rev Bar segment, clipped.

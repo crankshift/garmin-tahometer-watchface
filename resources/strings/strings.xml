@@ -7,5 +7,18 @@
     <string id="MinuteStyleSweep">Sweep</string>
     <string id="MinuteStyleSweepTip">Sweep + Tip</string>
     <string id="AlwaysOnRevBarTitle">Always-on Rev Bar</string>
+    <string id="LeftSlotTitle">Left Slot</string>
+    <string id="CenterSlotTitle">Center Slot</string>
+    <string id="RightSlotTitle">Right Slot</string>
+    <string id="BottomSlotTitle">Bottom Slot</string>
+    <string id="ReadoutDate">Date</string>
+    <string id="ReadoutSteps">Steps</string>
+    <string id="ReadoutWeather">Weather</string>
+    <string id="ReadoutHeartRate">Heart rate</string>
+    <string id="ReadoutBodyBattery">Body Battery</string>
+    <string id="ReadoutSun">Sunrise/sunset</string>
+    <string id="ReadoutNotifications">Notifications</string>
+    <string id="ReadoutBattery">Battery %</string>
+    <string id="ReadoutEmpty">Empty</string>
   </strings>
 </resources>

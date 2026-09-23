@@ -10,4 +10,56 @@
   <setting propertyKey="@Properties.AlwaysOnRevBar" title="@Strings.AlwaysOnRevBarTitle">
     <settingConfig type="boolean"/>
   </setting>
+  <setting propertyKey="@Properties.LeftSlotReadout" title="@Strings.LeftSlotTitle">
+    <settingConfig type="list">
+      <listEntry value="0">@Strings.ReadoutDate</listEntry>
+      <listEntry value="1">@Strings.ReadoutSteps</listEntry>
+      <listEntry value="2">@Strings.ReadoutWeather</listEntry>
+      <listEntry value="3">@Strings.ReadoutHeartRate</listEntry>
+      <listEntry value="4">@Strings.ReadoutBodyBattery</listEntry>
+      <listEntry value="5">@Strings.ReadoutSun</listEntry>
+      <listEntry value="6">@Strings.ReadoutNotifications</listEntry>
+      <listEntry value="7">@Strings.ReadoutBattery</listEntry>
+      <listEntry value="8">@Strings.ReadoutEmpty</listEntry>
+    </settingConfig>
+  </setting>
+  <setting propertyKey="@Properties.CenterSlotReadout" title="@Strings.CenterSlotTitle">
+    <settingConfig type="list">
+      <listEntry value="0">@Strings.ReadoutDate</listEntry>
+      <listEntry value="1">@Strings.ReadoutSteps</listEntry>
+      <listEntry value="2">@Strings.ReadoutWeather</listEntry>
+      <listEntry value="3">@Strings.ReadoutHeartRate</listEntry>
+      <listEntry value="4">@Strings.ReadoutBodyBattery</listEntry>
+      <listEntry value="5">@Strings.ReadoutSun</listEntry>
+      <listEntry value="6">@Strings.ReadoutNotifications</listEntry>
+      <listEntry value="7">@Strings.ReadoutBattery</listEntry>
+      <listEntry value="8">@Strings.ReadoutEmpty</listEntry>
+    </settingConfig>
+  </setting>
+  <setting propertyKey="@Properties.RightSlotReadout" title="@Strings.RightSlotTitle">
+    <settingConfig type="list">
+      <listEntry value="0">@Strings.ReadoutDate</listEntry>
+      <listEntry value="1">@Strings.ReadoutSteps</listEntry>
+      <listEntry value="2">@Strings.ReadoutWeather</listEntry>
+      <listEntry value="3">@Strings.ReadoutHeartRate</listEntry>
+      <listEntry value="4">@Strings.ReadoutBodyBattery</listEntry>
+      <listEntry value="5">@Strings.ReadoutSun</listEntry>
+      <listEntry value="6">@Strings.ReadoutNotifications</listEntry>
+      <listEntry value="7">@Strings.ReadoutBattery</listEntry>
+      <listEntry value="8">@Strings.ReadoutEmpty</listEntry>
+    </settingConfig>
+  </setting>
+  <setting propertyKey="@Properties.BottomSlotReadout" title="@Strings.BottomSlotTitle">
+    <settingConfig type="list">
+      <listEntry value="0">@Strings.ReadoutDate</listEntry>
+      <listEntry value="1">@Strings.ReadoutSteps</listEntry>
+      <listEntry value="2">@Strings.ReadoutWeather</listEntry>
+      <listEntry value="3">@Strings.ReadoutHeartRate</listEntry>
+      <listEntry value="4">@Strings.ReadoutBodyBattery</listEntry>
+      <listEntry value="5">@Strings.ReadoutSun</listEntry>
+      <listEntry value="6">@Strings.ReadoutNotifications</listEntry>
+      <listEntry value="7">@Strings.ReadoutBattery</listEntry>
+      <listEntry value="8">@Strings.ReadoutEmpty</listEntry>
+    </settingConfig>
+  </setting>
 </settings>
