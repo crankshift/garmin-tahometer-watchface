@@ -75,4 +75,4 @@ Seven settings in v1, edited in the Garmin Connect phone app: Minute Style, one 
 
 ## Next
 
-Lock the design with the prototype, then run a separate design round for the Monkey C port: project layout, SDK install, sideload flow and testing.
+The design is locked. The Monkey C port is split into tickets in [`docs/tickets/`](tickets/README.md); the port questions the design session skipped (source layout, testing approach, memory limit) are settled in ticket 01.
