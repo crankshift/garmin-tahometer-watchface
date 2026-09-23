@@ -1,6 +1,6 @@
 # 02: Numeral bitmap fonts
 
-Status: open
+Status: partial: fonts generated and wired into the resource build; can't confirm they load or render until the SDK is installed (see ticket 01)
 Depends on: 01
 
 ## Goal
@@ -26,9 +26,32 @@ The condensed DIN-style numerals from the prototype, on the watch as custom bitm
 
 - **Weekday language.** The Center Slot's weekday (`WED`) can be English-only, or localized from the watch language, for example `ŚR` in Polish. Localized text means the small font must include those glyphs. Suggested: decide before generating the small font.
 
+## Decisions
+
+- **Font choice.** Barlow Condensed Bold (SIL OFL), from `google/fonts` (`ofl/barlowcondensed/BarlowCondensed-Bold.ttf`, commit reachable at generation time). D-DIN Condensed Bold was the other candidate; Barlow was picked because it's readily available from a canonical, high-trust source (the Google Fonts repo) with an unambiguous OFL license file next to it, and its glyph shapes are close to the prototype's Apple DIN Condensed Bold reference. Source font and `OFL.txt` are committed at `assets/fonts/`.
+- **Anti-aliased vs. 1-bit glyphs.** Went with anti-aliased (8-bit alpha-channel coverage, matching `dc.setAntiAlias(true)` already used by ticket 03's drawing code). The ticket asks to compare the two on-device; that comparison needs the simulator, which needs the SDK (blocked, see ticket 01). Anti-aliased is the simplest option that fits `docs/design.md` (nothing in the design mandates 1-bit glyphs), so it's the default until someone can actually look at both on a `fenix7pro` profile.
+- **Bitmap font generator.** No BMFont generator (Hiero, bmGlyph, etc.) is installed and none could be installed non-interactively, so `tools/gen_bitmap_font.py` (Python + Pillow, already available) renders the glyph subsets and writes AngelCode BMFont text-format `.fnt` + `.png` pairs directly into `resources/fonts/`. It tight-crops each glyph and derives `xoffset`/`yoffset`/`xadvance` from Pillow's font metrics, so re-running it against the same source TTF reproduces the same output. `chnl=15` (all channels via the alpha channel) is used for AA glyph coverage, the common approach in Connect IQ custom-font tutorials.
+- **Font sizes.** Used the pixel sizes from the ticket's table directly as the rendered (bitmap) size, i.e. Gear at 89px and Tachometer numerals at 24px — the same numbers the prototype passes to its CSS font-size, so the two should read the same. Slot Value at 20px matches the prototype's `F_VALUE`.
+- **Small font size and glyphs.** The ticket's small-text range (13-15px) covers two different prototype uses at two different CSS sizes: the weekday header (15px, `F_HEAD`) and Gear's AM/PM (13px, `F_SMALL`). Bitmap fonts don't scale at draw time the way CSS fonts do, so one font asset can't serve both sizes. Picked a single 15px `SmallFont` (the weekday size, since it's the more prominent use) for both; AM/PM will render slightly larger than in the prototype once ticket 04 wires it up. This is a minor, deliberate deviation from the prototype's geometry, not a design change — `docs/design.md` doesn't specify a small-text pixel size.
+- **Weekday language.** English-only uppercase (per the working rules), so the small font's glyph set is exactly the union of letters used by `MON TUE WED THU FRI SAT SUN AM PM`: `A D E F H I M N O P R S T U W` (computed in `tools/gen_bitmap_font.py`, not hand-typed, to avoid missing a letter).
+- **Font resource ids.** `GearFont`, `TachometerNumeralFont`, `SlotValueFont`, `SmallFont` (declared in `resources/fonts/fonts.xml`), matching the `.fnt`/`.png` base names `gear`, `tachometer_numeral`, `slot_value`, `small`.
+
+## Memory cost
+
+Generated `.png` sizes (from `tools/gen_bitmap_font.py`'s output), as a proxy for on-device font memory since the SDK isn't installed to report the real compiled size:
+
+| Font | Glyphs | Sheet | PNG bytes |
+|------|--------|-------|-----------|
+| `gear.fnt` | 10 (`0`-`9`) | 369x69 | 6287 |
+| `tachometer_numeral.fnt` | 7 (`0`-`6`) | 87x21 | 1144 |
+| `slot_value.fnt` | 14 (digits, `-`, `%`, `°`, `:`) | 149x19 | 1777 |
+| `small.fnt` | 15 (`A D E F H I M N O P R S T U W`) | 138x15 | 1222 |
+
+Total ~10.4 KB of PNG source. The device's actual compiled font resource size (after monkeyc packs it for the watch's frame buffer format) is unverified — needs the SDK.
+
 ## Acceptance
 
-- [ ] All four fonts load in the simulator and render their glyphs.
-- [ ] The two-digit Gear at full size fits inside the Rev Bar ring (radius `R - 50`), as in the prototype.
-- [ ] The memory cost of the fonts is noted in this ticket.
-- [ ] The font license file is committed next to the font source.
+- [ ] All four fonts load in the simulator and render their glyphs. — blocked: no SDK/simulator (see ticket 01). Each `.fnt`/`.png` pair was generated successfully and the `.fnt` files were checked by hand for sane glyph metrics (non-zero widths/heights, a real bounding box for `°`, id 176).
+- [ ] The two-digit Gear at full size fits inside the Rev Bar ring (radius `R - 50`), as in the prototype. — blocked: not wired into drawing yet (ticket 04) and can't be checked visually without the simulator.
+- [x] The memory cost of the fonts is noted in this ticket. — see "Memory cost" above (PNG-size proxy; real device cost still needs the SDK).
+- [x] The font license file is committed next to the font source. — `assets/fonts/OFL.txt` next to `assets/fonts/BarlowCondensed-Bold.ttf`.
