@@ -1,6 +1,6 @@
 # 02: Numeral bitmap fonts
 
-Status: partial: fonts generated and wired into the resource build; can't confirm they load or render until the SDK is installed (see ticket 01)
+Status: done — confirmed loading and rendering in the simulator during the 04-08 session (see "Acceptance"). The anti-aliased-vs-1-bit comparison was still not redone on-device; anti-aliased remains the default per the original decision below.
 Depends on: 01
 
 ## Goal
@@ -51,7 +51,7 @@ Total ~10.4 KB of PNG source. The device's actual compiled font resource size (a
 
 ## Acceptance
 
-- [ ] All four fonts load in the simulator and render their glyphs. — blocked: no SDK/simulator (see ticket 01). Each `.fnt`/`.png` pair was generated successfully and the `.fnt` files were checked by hand for sane glyph metrics (non-zero widths/heights, a real bounding box for `°`, id 176).
-- [ ] The two-digit Gear at full size fits inside the Rev Bar ring (radius `R - 50`), as in the prototype. — blocked: not wired into drawing yet (ticket 04) and can't be checked visually without the simulator.
+- [x] All four fonts load in the simulator and render their glyphs. — `TachometerNumeralFont` confirmed rendering (0-6 numerals) in the ticket 01-03 baseline screenshot; `GearFont`, `SlotValueFont` and `SmallFont` confirmed rendering once wired up in tickets 04 and 07 of this session (see those tickets' Acceptance sections and screenshots). The resource loader also required a fix: `resources/fonts/fonts.xml`'s `filename` attributes had a redundant `fonts/` prefix that made the SDK unable to resolve them (see ticket 01's "Resolved" section).
+- [x] The two-digit Gear at full size fits inside the Rev Bar ring (radius `R - 50`), as in the prototype. — see ticket 04's Acceptance and screenshot.
 - [x] The memory cost of the fonts is noted in this ticket. — see "Memory cost" above (PNG-size proxy; real device cost still needs the SDK).
 - [x] The font license file is committed next to the font source. — `assets/fonts/OFL.txt` next to `assets/fonts/BarlowCondensed-Bold.ttf`.

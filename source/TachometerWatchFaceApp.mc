@@ -7,8 +7,8 @@ class TachometerWatchFaceApp extends Application.AppBase {
         AppBase.initialize();
     }
 
-    function getInitialView() as Array<WatchUi.Views or WatchUi.InputDelegates>? {
-        return [new TachometerWatchFaceView()] as Array<WatchUi.Views or WatchUi.InputDelegates>;
+    function getInitialView() as [WatchUi.Views] or [WatchUi.Views, WatchUi.InputDelegates] {
+        return [new TachometerWatchFaceView()];
     }
 
     // The Minute Style setting redraws the face without restarting it.

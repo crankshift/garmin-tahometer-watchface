@@ -1,6 +1,6 @@
 # 01: Project skeleton and sideload
 
-Status: blocked: SDK install needs an interactive Garmin account login in the SdkManager GUI (see "Waiting on user")
+Status: done
 Depends on: none
 Blocks: every other ticket
 
@@ -37,7 +37,21 @@ Record the choices in this ticket. Add an ADR under `docs/adr/` only if a choice
 - **Developer key.** Generated with `openssl genrsa` / `openssl pkcs8` (no SDK or Garmin account needed for this part) and kept outside the repo at `~/.garmin/tachometer-watchface/developer_key.der` (`.pem` alongside it). `.gitignore` also blocks `*.der` / `*.pem` / `developer_key.*` as a second layer in case a key is ever generated inside the repo by mistake.
 - **Launcher icon.** The manifest requires a `launcherIcon` drawable. No icon design exists yet, so `resources/drawables/launcher_icon.png` is a small generated placeholder (40x40, amber arc + white tick on black, via Pillow) rather than blocking the skeleton on real icon art. Revisit when the face's look is otherwise finished.
 
-## Waiting on user
+## Resolved (tickets 04-08 session)
+
+The SDK is now installed (Connect IQ SDK 9.2.0, `fenix7pro` device profile). Also needed, and installed the same way as the SdkManager cask: a JRE — `monkeyc` requires Java and none was present (`brew install openjdk`, then put `/opt/homebrew/opt/openjdk/bin` on `PATH`; no `sudo` symlink needed, `JAVA_HOME=/opt/homebrew/opt/openjdk` is enough).
+
+The first real build surfaced two latent bugs neither had been possible to catch without the SDK:
+
+- `resources/drawables/drawables.xml` and `resources/fonts/fonts.xml` gave their `filename` attributes a redundant subdirectory prefix (e.g. `filename="drawables/launcher_icon.png"` from inside `resources/drawables/drawables.xml` itself). Connect IQ resolves `filename` relative to the XML file's own directory, not the resource-path root (confirmed against the SDK's own `Analog` sample), so this resolved to `resources/drawables/drawables/launcher_icon.png` and failed. Fixed by dropping the redundant prefix in both files.
+- `TachometerWatchFaceApp.getInitialView()`'s return type didn't match `Application.AppBase`'s declared signature closely enough for the type checker. Fixed to the SDK samples' standard `as [Views] or [Views, InputDelegates]`.
+- `Tachometer.drawNeedle`'s explicit `as Array<Array<Float>>` cast on the `fillPolygon` argument didn't match the tuple type `fillPolygon` actually expects. Fixed by dropping the cast (matches how the SDK's own samples call `fillPolygon`, with no annotation).
+
+With those fixed, `monkeyc -d fenix7pro -f monkey.jungle ...` builds clean, `monkeydo -t` passes all 11 unit tests, and the face runs in the simulator.
+
+The `fenix7pro` watch face memory limit, from `compiler.json`: **131072 bytes (128 KB)**. The simulator's own footer confirms this in a different form: it reports `123.8kB` available at idle, i.e. 128 KB minus fixed overhead.
+
+## Waiting on user (historical — resolved above)
 
 The Connect IQ SDK itself could not be installed non-interactively:
 
@@ -71,8 +85,8 @@ What you need to do:
 
 ## Acceptance
 
-- [ ] The project builds without warnings for `fenix7pro`. — blocked: no `monkeyc` available (SDK not installed, see "Waiting on user"). All XML resource files were checked with `xmllint --noout` and are well-formed, which is the only verification possible without the SDK.
-- [ ] The face runs in the simulator on the `fenix7pro` profile. — blocked: same reason.
-- [ ] After sideloading, the face appears on the watch and can be selected. — blocked: needs a built `.prg` and physical watch access.
-- [ ] The memory limit is recorded in this ticket. — blocked: needs the SDK's `compiler.json`, not published anywhere else.
+- [x] The project builds without warnings for `fenix7pro`. — `monkeyc -d fenix7pro -f monkey.jungle -o bin/tachometer.prg -y ~/.garmin/tachometer-watchface/developer_key.der -w` succeeds clean.
+- [x] The face runs in the simulator on the `fenix7pro` profile. — `monkeydo bin/tachometer.prg fenix7pro` runs and renders (screenshot taken during the 04-08 session).
+- [ ] After sideloading, the face appears on the watch and can be selected. — still needs physical watch access (ticket 09).
+- [x] The memory limit is recorded in this ticket. — 131072 bytes (128 KB), see "Resolved" above.
 - [x] The source layout and testing approach are recorded in this ticket. — see "Decisions" above.

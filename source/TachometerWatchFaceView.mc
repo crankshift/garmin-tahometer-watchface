@@ -21,10 +21,10 @@ class TachometerWatchFaceView extends WatchUi.WatchFace {
         dc.clear();
 
         var minute = System.getClockTime().min;
-        var minuteStyle = Application.Properties.getValue("MinuteStyle") as String;
+        var minuteStyle = Application.Properties.getValue("MinuteStyle") as Number;
 
         Tachometer.drawTachometer(dc, minute, minuteStyle, _tachometerNumeralFont as Graphics.FontDefinition);
-        if (minuteStyle.equals(Tachometer.STYLE_NEEDLE)) {
+        if (minuteStyle == Tachometer.STYLE_NEEDLE) {
             Tachometer.drawNeedle(dc, minute);
         }
     }

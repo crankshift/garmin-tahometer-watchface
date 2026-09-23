@@ -4,9 +4,12 @@ import Toybox.Math;
 
 // Ported from prototype/index.html's drawTachometer and drawNeedle.
 module Tachometer {
-    const STYLE_NEEDLE = "needle";
-    const STYLE_SWEEP = "sweep";
-    const STYLE_SWEEP_TIP = "sweepTip";
+    // Numeric, not string: Connect IQ's settings resource compiler only allows a
+    // settingConfig type="list" on a type="number" property (see docs/tickets/03's
+    // "Decisions" for the property/setting type table).
+    const STYLE_NEEDLE = 0;
+    const STYLE_SWEEP = 1;
+    const STYLE_SWEEP_TIP = 2;
 
     const R_BAND = Constants.R - 6;    // Sweep band and unlit Redline radius
     const BAND_W = 8;
@@ -37,16 +40,16 @@ module Tachometer {
     function drawTachometer(
         dc as Graphics.Dc,
         minute as Number,
-        minuteStyle as String,
+        minuteStyle as Number,
         numeralFont as Graphics.FontDefinition
     ) as Void {
         drawUnlitRedline(dc);
-        if (!minuteStyle.equals(STYLE_NEEDLE)) {
+        if (minuteStyle != STYLE_NEEDLE) {
             drawSweep(dc, minute);
         }
         drawTicks(dc);
         drawNumerals(dc, numeralFont);
-        if (minuteStyle.equals(STYLE_SWEEP_TIP)) {
+        if (minuteStyle == STYLE_SWEEP_TIP) {
             drawTip(dc, minute);
         }
     }
@@ -122,6 +125,6 @@ module Tachometer {
             [tx + px * NEEDLE_HALF_WIDTH_TIP, ty + py * NEEDLE_HALF_WIDTH_TIP],
             [tx - px * NEEDLE_HALF_WIDTH_TIP, ty - py * NEEDLE_HALF_WIDTH_TIP],
             [bx - px * NEEDLE_HALF_WIDTH_BASE, by - py * NEEDLE_HALF_WIDTH_BASE]
-        ] as Array<Array<Float>>);
+        ]);
     }
 }
