@@ -39,12 +39,12 @@ function testIsAMBeforeNoon(logger as Test.Logger) as Boolean {
 (:test)
 function testGearLayoutAtV1ScaleEqualsTheV1Constants(logger as Test.Logger) as Boolean {
     var l = new Gear.Layout(130.0f);
-    return l.centerY == 94.0 && l.ampmGap == 9.0;
+    return l.centerY == 94.0 && l.ampmOffset == 46.0;
 }
 
 (:test)
 function testGearLayoutAt454ScalesByTheScreenWidthOver260(logger as Test.Logger) as Boolean {
     var l = new Gear.Layout(227.0f);
     var s = 454.0 / 260.0;
-    return nearly(l.centerY, 94 * s) && nearly(l.ampmGap, 9 * s);
+    return nearly(l.centerY, 94 * s) && nearly(l.ampmOffset, 46 * s);
 }

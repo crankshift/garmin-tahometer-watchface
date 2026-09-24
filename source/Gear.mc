@@ -8,12 +8,14 @@ module Gear {
     // "Scaling"). Built once in fit.
     class Layout {
         var centerY as Float;
-        var ampmGap as Float;
+        // From the Gear's center to the center of AM/PM: 46 px at 260 px. That puts it halfway between
+        // the bottom of the digits and the Center Slot's head text.
+        var ampmOffset as Float;
 
         function initialize(radius as Float) {
             var s = Screen.scaleFor(radius);
             centerY = radius - 36 * s; // round screens: the center is at the radius
-            ampmGap = 9 * s;
+            ampmOffset = 46 * s;
         }
     }
 
@@ -43,8 +45,7 @@ module Gear {
     }
 
     // The Gear in `color`, with AM/PM under it in 12-hour mode. The awake face draws it in white with
-    // the Gear font; the always-on view draws it in light grey with the outline font, which has
-    // the same metrics, so the AM/PM lands in the same place.
+    // the Gear font; the always-on view draws it in light grey with the outline font.
     function draw(
         dc as Graphics.Dc,
         gearFont as Graphics.FontDefinition,
@@ -63,11 +64,10 @@ module Gear {
         }
 
         var ampm = isAM(hour) ? "AM" : "PM";
-        var capHeight = dc.getFontHeight(gearFont);
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
         dc.drawText(
             Screen.cx,
-            layout.centerY + capHeight / 2 + layout.ampmGap,
+            layout.centerY + layout.ampmOffset,
             smallFont,
             ampm,
             Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER
