@@ -90,7 +90,21 @@ The Monkey C extension for VS Code works too.
 
 Connect the watch over USB and copy `bin/tachometer.prg` into `GARMIN/APPS`. On macOS the fenix 7 connects over MTP, so you'll need a tool such as [OpenMTP](https://github.com/ganeshrvel/openmtp).
 
-The app id in `manifest.xml` is fine for sideloading. If you publish your own build to the Connect IQ Store, give it a new id.
+### Store packages
+
+`manifest.xml` keeps beta app id `F0E8E679-D907-40F3-9A19-6397A3BECF60`. Do not change it: Garmin's Beta Apps section associates that id with the beta listing.
+
+Use the export script to build a package for either listing. The production manifest is generated under `bin/`, so source manifest never changes.
+
+```sh
+# Beta Apps listing
+JAVA_HOME=/opt/homebrew/opt/openjdk tools/export_iq.sh beta
+
+# Production listing
+JAVA_HOME=/opt/homebrew/opt/openjdk tools/export_iq.sh prod
+```
+
+Upload `bin/tachometer-beta.iq` with the beta-app option selected. Upload `bin/tachometer-prod.iq` for production. Production id is `70922947-B3E2-4146-A659-C10235F894A9`.
 
 ## Project layout
 

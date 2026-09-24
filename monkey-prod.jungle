@@ -1,0 +1,4 @@
+project.manifest = bin/manifest-prod.xml
+
+base.sourcePath = source
+base.resourcePath = resources
