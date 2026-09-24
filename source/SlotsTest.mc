@@ -1,4 +1,5 @@
 import Toybox.Lang;
+import Toybox.Graphics;
 import Toybox.Test;
 
 (:test)
@@ -22,4 +23,21 @@ function testSlotsLayoutAt454ScalesByTheScreenWidthOver260(logger as Test.Logger
         && nearly(l.center[0], 130 * s) && nearly(l.center[1], 168 * s)
         && nearly(l.right[0], 200 * s) && nearly(l.right[1], 168 * s)
         && nearly(l.bottom[0], 130 * s) && nearly(l.bottom[1], 214 * s);
+}
+
+(:test)
+function testValueColorDimsWhiteToLightGreyInTheAlwaysOnView(logger as Test.Logger) as Boolean {
+    return Slots.valueColor(Graphics.COLOR_WHITE, true) == Graphics.COLOR_LT_GRAY;
+}
+
+(:test)
+function testValueColorLeavesWhiteAloneWhenAwake(logger as Test.Logger) as Boolean {
+    return Slots.valueColor(Graphics.COLOR_WHITE, false) == Graphics.COLOR_WHITE;
+}
+
+(:test)
+function testValueColorLeavesOtherColorsAloneInTheAlwaysOnView(logger as Test.Logger) as Boolean {
+    // The dimmed Notifications count stays dark grey rather than brightening to light grey.
+    return Slots.valueColor(Graphics.COLOR_DK_GRAY, true) == Graphics.COLOR_DK_GRAY
+        && Slots.valueColor(Graphics.COLOR_RED, true) == Graphics.COLOR_RED;
 }

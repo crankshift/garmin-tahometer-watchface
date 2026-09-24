@@ -43,3 +43,18 @@ function testFuelGaugeLayoutAt454ScalesByTheScreenWidthOver260(logger as Test.Lo
     var s = 454.0 / 260.0;
     return nearly(l.rBand, 124 * s) && l.bandW == 14 && nearly(l.iconR, 114 * s);
 }
+
+(:test)
+function testAlwaysOnLampShowsOnlyAtTwentyPercentOrBelow(logger as Test.Logger) as Boolean {
+    return !FuelGauge.alwaysOnLampVisible(76)
+        && !FuelGauge.alwaysOnLampVisible(21)
+        && FuelGauge.alwaysOnLampVisible(20)
+        && FuelGauge.alwaysOnLampVisible(9);
+}
+
+(:test)
+function testAlwaysOnBandIsThreePixelsAtV1ScaleAndScales(logger as Test.Logger) as Boolean {
+    var v1 = new FuelGauge.Layout(130.0f);
+    var l454 = new FuelGauge.Layout(227.0f);
+    return v1.alwaysOnBandW == 3 && l454.alwaysOnBandW == 5;
+}

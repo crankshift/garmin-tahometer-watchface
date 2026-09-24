@@ -46,10 +46,11 @@ function testPenWidthNeverDropsBelowOnePixel(logger as Test.Logger) as Boolean {
 
 (:test)
 function testFitSetsCenterRadiusAndScaleFromScreenWidth(logger as Test.Logger) as Boolean {
-    Screen.fit(454);
-    var ok = Screen.radius == 227.0 && Screen.cx == 227.0 && Screen.cy == 227.0 && nearly(Screen.scale, 454.0 / 260.0);
-    Screen.fit(260);
-    return ok && Screen.radius == 130.0 && Screen.scale == 1.0;
+    Screen.fit(454, true);
+    var ok = Screen.radius == 227.0 && Screen.cx == 227.0 && Screen.cy == 227.0 && nearly(Screen.scale, 454.0 / 260.0)
+        && Screen.amoled;
+    Screen.fit(260, false);
+    return ok && Screen.radius == 130.0 && Screen.scale == 1.0 && !Screen.amoled;
 }
 
 (:test)

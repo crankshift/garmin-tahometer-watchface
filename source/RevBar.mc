@@ -24,6 +24,13 @@ module RevBar {
         layout = new Layout(radius);
     }
 
+    // Pure: true while the Rev Bar should be running: whenever the watch is awake, and asleep only
+    // on a MIP watch with the "Always-on Rev Bar" setting on and the power budget not exceeded.
+    // AMOLED watches never get partial updates, so the setting has no effect on them.
+    function isVisible(awake as Boolean, amoled as Boolean, alwaysOnSetting as Boolean, budgetExceeded as Boolean) as Boolean {
+        return awake || (!amoled && alwaysOnSetting && !budgetExceeded);
+    }
+
     // Pure: red for the last 10 seconds, white otherwise.
     function segmentColor(second as Number) as Graphics.ColorType {
         return second >= 50 ? Graphics.COLOR_RED : Graphics.COLOR_WHITE;
@@ -76,5 +83,15 @@ module RevBar {
         dc.setClip(bounds[0], bounds[1], bounds[2], bounds[3]);
         drawSegment(dc, second);
         dc.clearClip();
+    }
+
+    // AMOLED only, drawn before the face so the face sits on top: a glow around the lit Rev Bar,
+    // white, and red past second 50.
+    function drawGlow(dc as Graphics.Dc, second as Number) as Void {
+        var whiteEnd = second + 1 < 50 ? second + 1 : 50;
+        Glow.drawArc(dc, layout.rRev, Geometry.minuteDeg(0), Geometry.minuteDeg(whiteEnd), layout.penWidth, Graphics.COLOR_WHITE);
+        if (second >= 50) {
+            Glow.drawArc(dc, layout.rRev, Geometry.minuteDeg(50), Geometry.minuteDeg(second + 1), layout.penWidth, Graphics.COLOR_RED);
+        }
     }
 }

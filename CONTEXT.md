@@ -33,6 +33,14 @@ _Avoid_: hour digit
 The analog seconds indicator: a thin arc that fills across the current minute.
 _Avoid_: seconds hand
 
+**Glow**:
+A soft halo behind the Minute Style, the Rev Bar and the Gear. Only AMOLED watches draw it.
+_Avoid_: shadow, bloom
+
+**Always-on View**:
+The dimmed face an AMOLED watch shows while it sleeps. It has the major ticks and numerals, the Gear as an outline, a thin needle, the Slots and a thin Fuel Gauge, and no Rev Bar.
+_Avoid_: sleep face, AOD
+
 ### Battery
 
 **Fuel Gauge**:

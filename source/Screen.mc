@@ -15,8 +15,13 @@ module Screen {
     var radius as Float = V1_RADIUS;
     var scale as Float = 1.0f;
 
-    // Round screens are as tall as they are wide.
-    function fit(width as Number) as Void {
+    // True on AMOLED watches, which get the awake extras and the always-on view.
+    var amoled as Boolean = false;
+
+    // Round screens are as tall as they are wide. `amoled` comes from
+    // DeviceSettings.requiresBurnInProtection.
+    function fit(width as Number, isAmoled as Boolean) as Void {
+        amoled = isAmoled;
         radius = width / 2.0f;
         cx = radius;
         cy = radius;

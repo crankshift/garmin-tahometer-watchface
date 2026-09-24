@@ -32,12 +32,30 @@ function testRevBarLayoutAt454ScalesByTheScreenWidthOver260(logger as Test.Logge
 (:test)
 function testRevBarClipBoxGrowsWithTheScreen(logger as Test.Logger) as Boolean {
     var small = RevBar.segmentClipBounds(10);
-    Screen.fit(454);
+    Screen.fit(454, false);
     RevBar.fit(Screen.radius);
     var large = RevBar.segmentClipBounds(10);
-    Screen.fit(260);
+    Screen.fit(260, false);
     RevBar.fit(Screen.radius);
     // About 454 / 260 times the 260 box; the pen width rounds to whole pixels, so allow 4 px.
     var scale = 454.0 / 260.0;
     return (large[2] - small[2] * scale).abs() < 4 && (large[3] - small[3] * scale).abs() < 4;
+}
+
+(:test)
+function testRevBarShowsWheneverTheWatchIsAwake(logger as Test.Logger) as Boolean {
+    return RevBar.isVisible(true, false, false, false) && RevBar.isVisible(true, true, false, true);
+}
+
+(:test)
+function testRevBarAsleepOnMipFollowsTheSettingUntilThePowerBudgetIsExceeded(logger as Test.Logger) as Boolean {
+    return !RevBar.isVisible(false, false, false, false)
+        && RevBar.isVisible(false, false, true, false)
+        && !RevBar.isVisible(false, false, true, true);
+}
+
+(:test)
+function testRevBarStaysOffOnAmoledWhileAsleepWhateverTheSetting(logger as Test.Logger) as Boolean {
+    // AMOLED watches never call onPartialUpdate (docs/specs/multi-device.md "AMOLED, always-on").
+    return !RevBar.isVisible(false, true, true, false);
 }

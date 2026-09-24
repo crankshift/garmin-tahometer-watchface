@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <resources>
   <fonts>
-    <font id="GearFont" filename="gear.fnt"/>
-    <font id="TachometerNumeralFont" filename="tachometer_numeral.fnt"/>
-    <font id="SlotValueFont" filename="slot_value.fnt"/>
-    <font id="SmallFont" filename="small.fnt"/>
+    <font id="GearFont" filename="gear.fnt" antialias="true"/>
+    <font id="TachometerNumeralFont" filename="tachometer_numeral.fnt" antialias="true"/>
+    <font id="SlotValueFont" filename="slot_value.fnt" antialias="true"/>
+    <font id="SmallFont" filename="small.fnt" antialias="true"/>
+    <font id="GearGlowFont" filename="gear_glow.fnt" antialias="true"/>
+    <font id="GearOutlineFont" filename="gear_outline.fnt" antialias="true"/>
   </fonts>
 </resources>

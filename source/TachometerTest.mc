@@ -1,4 +1,5 @@
 import Toybox.Lang;
+import Toybox.Graphics;
 import Toybox.Test;
 
 (:test)
@@ -67,4 +68,55 @@ function testTachometerLayoutAt454ScalesByTheScreenWidthOver260(logger as Test.L
 function testTachometerLayoutKeepsPenWidthsAtOnePixelOrMoreOn240(logger as Test.Logger) as Boolean {
     var l = new Tachometer.Layout(120.0f);
     return l.minorTickPen == 1 && l.midTickPen == 2 && l.majorTickPen == 3;
+}
+
+(:test)
+function testScaleColorAwakeIsWhiteBelowTheRedlineAndRedInIt(logger as Test.Logger) as Boolean {
+    return Tachometer.scaleColor(0, false) == Graphics.COLOR_WHITE
+        && Tachometer.scaleColor(40, false) == Graphics.COLOR_WHITE
+        && Tachometer.scaleColor(50, false) == Graphics.COLOR_RED
+        && Tachometer.scaleColor(60, false) == Graphics.COLOR_RED;
+}
+
+(:test)
+function testScaleColorAlwaysOnIsLightGreyBelowTheRedlineAndDarkRedInIt(logger as Test.Logger) as Boolean {
+    return Tachometer.scaleColor(0, true) == Graphics.COLOR_LT_GRAY
+        && Tachometer.scaleColor(40, true) == Graphics.COLOR_LT_GRAY
+        && Tachometer.scaleColor(50, true) == 0xAA0000
+        && Tachometer.scaleColor(60, true) == 0xAA0000;
+}
+
+(:test)
+function testAlwaysOnPensAtV1ScaleAreTwoPixels(logger as Test.Logger) as Boolean {
+    var l = new Tachometer.Layout(130.0f);
+    return l.alwaysOnTickPen == 2 && l.alwaysOnNeedlePen == 2;
+}
+
+(:test)
+function testAlwaysOnPensAt454ScaleAndRound(logger as Test.Logger) as Boolean {
+    var l = new Tachometer.Layout(227.0f);
+    return l.alwaysOnTickPen == 3 && l.alwaysOnNeedlePen == 3;
+}
+
+(:test)
+function testNeedleGlowPenIsThreePixelsAtV1ScaleAndScales(logger as Test.Logger) as Boolean {
+    var v1 = new Tachometer.Layout(130.0f);
+    var l454 = new Tachometer.Layout(227.0f);
+    return v1.needleGlowPen == 3 && l454.needleGlowPen == 5;
+}
+
+(:test)
+function testMinuteColorIsAmberBelowTheRedlineAndRedInIt(logger as Test.Logger) as Boolean {
+    return Tachometer.minuteColor(0) == Graphics.COLOR_YELLOW
+        && Tachometer.minuteColor(49) == Graphics.COLOR_YELLOW
+        && Tachometer.minuteColor(50) == Graphics.COLOR_RED
+        && Tachometer.minuteColor(59) == Graphics.COLOR_RED;
+}
+
+(:test)
+function testAmberEndStopsTheAmberSweepAtTheRedline(logger as Test.Logger) as Boolean {
+    return Tachometer.amberEnd(1) == 1
+        && Tachometer.amberEnd(49) == 49
+        && Tachometer.amberEnd(50) == 50
+        && Tachometer.amberEnd(57) == 50;
 }

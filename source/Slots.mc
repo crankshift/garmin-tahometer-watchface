@@ -36,13 +36,20 @@ module Slots {
         layout = new Layout(radius);
     }
 
+    // Pure: the color of a Slot's value. The always-on view dims a white one to light grey and leaves
+    // the others (the dimmed Notifications count, say) alone. Icons keep their usual colors.
+    function valueColor(color as Graphics.ColorType, alwaysOn as Boolean) as Graphics.ColorType {
+        return alwaysOn && color == Graphics.COLOR_WHITE ? Graphics.COLOR_LT_GRAY : color;
+    }
+
     // Icon (or head text) 11 px above the Slot point, value 10 px below (at 260 px).
     function drawStacked(
         dc as Graphics.Dc,
         pos as Array<Float>,
         content as ReadoutContent?,
         headFont as Graphics.FontDefinition,
-        valueFont as Graphics.FontDefinition
+        valueFont as Graphics.FontDefinition,
+        alwaysOn as Boolean
     ) as Void {
         if (content == null) {
             return;
@@ -55,7 +62,7 @@ module Slots {
         } else {
             Readouts.drawIcon(dc, content.kind, x, y - layout.stackedIconOffset, content.iconColor, content.extra);
         }
-        dc.setColor(content.textColor, Graphics.COLOR_TRANSPARENT);
+        dc.setColor(valueColor(content.textColor, alwaysOn), Graphics.COLOR_TRANSPARENT);
         dc.drawText(x, y + layout.stackedValueOffset, valueFont, content.text, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
     }
 
@@ -65,7 +72,8 @@ module Slots {
         pos as Array<Float>,
         content as ReadoutContent?,
         headFont as Graphics.FontDefinition,
-        valueFont as Graphics.FontDefinition
+        valueFont as Graphics.FontDefinition,
+        alwaysOn as Boolean
     ) as Void {
         if (content == null) {
             return;
@@ -81,7 +89,7 @@ module Slots {
         } else {
             Readouts.drawIcon(dc, content.kind, x0 + layout.iconSize / 2.0, y, content.iconColor, content.extra);
         }
-        dc.setColor(content.textColor, Graphics.COLOR_TRANSPARENT);
+        dc.setColor(valueColor(content.textColor, alwaysOn), Graphics.COLOR_TRANSPARENT);
         dc.drawText(x0 + lead + layout.gap, y, valueFont, content.text, Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
     }
 
@@ -92,11 +100,12 @@ module Slots {
         rightKind as Number,
         bottomKind as Number,
         headFont as Graphics.FontDefinition,
-        valueFont as Graphics.FontDefinition
+        valueFont as Graphics.FontDefinition,
+        alwaysOn as Boolean
     ) as Void {
-        drawStacked(dc, layout.left, Readouts.get(leftKind), headFont, valueFont);
-        drawStacked(dc, layout.center, Readouts.get(centerKind), headFont, valueFont);
-        drawStacked(dc, layout.right, Readouts.get(rightKind), headFont, valueFont);
-        drawInline(dc, layout.bottom, Readouts.get(bottomKind), headFont, valueFont);
+        drawStacked(dc, layout.left, Readouts.get(leftKind), headFont, valueFont, alwaysOn);
+        drawStacked(dc, layout.center, Readouts.get(centerKind), headFont, valueFont, alwaysOn);
+        drawStacked(dc, layout.right, Readouts.get(rightKind), headFont, valueFont, alwaysOn);
+        drawInline(dc, layout.bottom, Readouts.get(bottomKind), headFont, valueFont, alwaysOn);
     }
 }

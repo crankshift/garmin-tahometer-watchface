@@ -53,13 +53,13 @@ MIP watches look and behave exactly as `docs/design.md` describes, at every size
 
 The awake face on AMOLED is the same face, in the same colors, plus five extras. There is no setting to turn them off.
 
-1. **Anti-aliasing.** The face already calls `dc.setAntiAlias(true)` on every screen. It only makes a visible difference on AMOLED.
+1. **Anti-aliasing.** The face already calls `dc.setAntiAlias(true)` on every screen. It only makes a visible difference on AMOLED. Bitmap fonts are 1-bit unless their `<font>` says `antialias="true"`, so the AMOLED font sets do (found in ticket 13). Anti-aliased fonts have four coverage levels.
 2. **Redline gradient.** The unlit Redline band runs from `0x220000` at minute 50 to `0x770000` at minute 60. Past minute 50, the lit Sweep runs from `0xAA0000` to `0xFF3300`. Both are drawn as half-minute arcs, because the watch has no gradient fill. The color at a given minute never changes, so a Sweep that stops at minute 53 ends in the minute-53 color.
 3. **Minute Style glow.** An amber glow (red past minute 50) around the Sweep, the Tip and the Needle.
 4. **Rev Bar glow.** A white glow (red past second 50) around the lit Rev Bar.
 5. **Gear glow.** A soft white glow behind the Gear.
 
-The watch can't blur shapes, so each arc or needle glow is three wider strokes at low alpha, drawn widest first. At the 260 scale, each stroke extends past the shape on both sides by 5, 3.5 and 2 px, at alpha 0.10, 0.16 and 0.26. The strokes use `Graphics.createColor` with alpha (API 4.0+). The Gear glow is a pre-blurred bitmap font, drawn under the Gear.
+The watch can't blur shapes, so each arc or needle glow is three wider strokes at low alpha, drawn widest first. At the 260 scale, each stroke extends past the shape on both sides by 5, 3.5 and 2 px, at alpha 0.10, 0.16 and 0.26. The strokes use `Graphics.createColor` with alpha (API 4.0+). The Gear glow is a pre-blurred bitmap font, drawn under the Gear. Since a font has only four coverage levels, the blur is baked as three brightness bands and drawn in 22% white, which is what a 45% blurred digit shows at the edge of its strokes (found in ticket 13).
 
 ## AMOLED, always-on
 

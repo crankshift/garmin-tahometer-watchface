@@ -8,6 +8,12 @@ Agreed on 2026-09-23 in a design grilling session. The vocabulary lives in [`CON
 - Twelve more watches share that screen, so the face needs no layout change on them: `fenix6`, `fenix6pro`, `fenix7`, `fenix7pronowifi`, `fenix8solar47mm`, `fenix9prosolar47mm`, `fr255`, `fr255m`, `fr955`, `legacyherofirstavenger`, `legacysagadarthvader` and `vivoactive4`.
 - Twenty-one watches have a 240×240 round MIP screen: `descentmk2s`, `fenix5plus`, `fenix5splus`, `fenix5xplus`, `fenix6s`, `fenix6spro`, `fenix7s`, `fenix7spro`, `fr245`, `fr245m`, `fr745`, `fr945`, `fr945lte`, `marqadventurer`, `marqathlete`, `marqaviator`, `marqcaptain`, `marqcommander`, `marqdriver`, `marqexpedition` and `marqgolfer`.
 - Nine watches have a 280×280 round MIP screen: `descentmk2`, `enduro`, `enduro3`, `fenix6xpro`, `fenix7x`, `fenix7xpro`, `fenix7xpronowifi`, `fenix8solar51mm` and `fenix9prosolar51mm`. The face scales to the 240 and 280 px screens in proportion ([multi-device spec](specs/multi-device.md), "Scaling").
+- Forty-eight watches have a round AMOLED screen of 360 to 466 px and get the extras and always-on view under "AMOLED look":
+  - 360: `fr265s`, `venu2s`.
+  - 390 (19 ids): `approachs50`, `approachs7042mm`, `descentg2`, `descentmk343mm`, `epix2pro42mm`, `fr165`, `fr165m`, `fr170`, `fr170m`, `fr57042mm`, `fr70`, `instinct3amoled45mm`, `instinctcrossoveramoled`, `marq2`, `marq2aviator`, `venu3s`, `venu441mm`, `vivoactive5` and `vivoactive6`.
+  - 416 (12 ids): `d2airx10`, `d2mach1`, `epix2`, `epix2pro47mm`, `fenix843mm`, `fenix943mm`, `fenix9pro43mm`, `fenixe`, `fr265`, `instinct3amoled50mm`, `venu2` and `venu2plus`.
+  - 454 (14 ids): `approachs7047mm`, `d2mach2`, `d2mach2pro`, `descentmk351mm`, `epix2pro51mm`, `fenix847mm`, `fenix8pro47mm`, `fenix947mm`, `fenix9pro47mm`, `fr57047mm`, `fr965`, `fr970`, `venu3` and `venu445mm`.
+  - 466: `fenix9pro51mm`.
 - Personal sideload first, plus a private Connect IQ Store beta, because the phone-app settings only appear for Store installs. A public Store release comes after multi-device support.
 - More watches (round MIP at 240 to 280 px, and round AMOLED at 360 to 466 px) are specified in [`docs/specs/multi-device.md`](specs/multi-device.md).
 
@@ -35,7 +41,7 @@ Agreed on 2026-09-23 in a design grilling session. The vocabulary lives in [`CON
 ## Rev Bar
 
 - A thin arc inside the numerals, spanning the same 180° as the Tachometer, with 60 segments (one per second). Seconds 50 to 59 are red.
-- Shown only while the watch is awake by default. The "Always-on Rev Bar" setting (default off) keeps it running in low-power mode through partial updates.
+- Shown only while the watch is awake by default. The "Always-on Rev Bar" setting (default off) keeps it running in low-power mode through partial updates. AMOLED watches get no partial updates, so the setting does nothing there, and its title says "(MIP only)".
 - If the watch reports that the partial-update power budget was exceeded, the Rev Bar hides until the next wake rather than freezing on a stale second.
 
 ## Fuel Gauge
@@ -63,11 +69,19 @@ Agreed on 2026-09-23 in a design grilling session. The vocabulary lives in [`CON
 ## Look
 
 - Black background, white ticks and numerals, red Redline, amber Minute Style.
-- Numeral font for the Gear and the Tachometer: condensed DIN style, shipped to the watch as a custom bitmap font. A 7-segment font was tried and rejected because `1` becomes two thin bars and hours like `11` read poorly. Bitmap fonts don't scale, so `tools/gen_bitmap_font.py` generates a set per screen size.
+- Numeral font for the Gear and the Tachometer: condensed DIN style, shipped to the watch as a custom bitmap font. A 7-segment font was tried and rejected because `1` becomes two thin bars and hours like `11` read poorly. Bitmap fonts don't scale, so `tools/gen_bitmap_font.py` generates a set per screen size. The AMOLED sets are anti-aliased, with four coverage levels; the MIP sets are 1-bit.
+
+## AMOLED look
+
+The AMOLED watches draw the same face in the same colors, plus a few extras ([multi-device spec](specs/multi-device.md), "AMOLED, awake" and "AMOLED, always-on"). There is no setting to turn them off. MIP watches draw none of this.
+
+- **Redline gradient.** The unlit Redline runs from `0x220000` at minute 50 to `0x770000` at minute 60. Past minute 50 the Sweep runs from `0xAA0000` to `0xFF3300`. Each is drawn as half-minute arcs, and the color at a minute never changes, so a Sweep that stops at minute 53 ends in the minute-53 color.
+- **Glow.** Under the Sweep, the Tip and the Needle (amber, red past minute 50), under the lit Rev Bar (white, red past second 50), and under the Gear. An arc or line glows as three wider strokes at low alpha, drawn widest first: 5, 3.5 and 2 px past the shape on each side at 260 px, at alpha 0.10, 0.16 and 0.26. The Gear glow is a pre-blurred bitmap font drawn one digit at a time behind the Gear, in 22% white. Connect IQ fonts have only four coverage levels, so the blur is baked as three brightness bands rather than a smooth fall-off.
+- **Always-on view.** Redrawn once a minute while the watch sleeps, and it must light under 10% of the screen, counting every non-black pixel. It has the major ticks (2 px) and numerals in light grey, dark red `0xAA0000` for the Redline ones. The Gear is an outline in light grey (its own bitmap font), with AM/PM in 12-hour mode. The minute is a thin 2 px floating needle, amber and red past minute 50, whatever the Minute Style. The four Slots keep their icons and dim white values to light grey. The Fuel Gauge is a 3 px band of the lit segments only, in light grey, and its Low-Fuel Lamp shows only at 20% battery or below. There is no Rev Bar and no pixel shift against burn-in.
 
 ## Settings
 
-Seven settings in v1, edited in the Garmin Connect phone app: Minute Style, one Readout per Slot (four settings), Weather temperature (feels like or actual, default feels like), and Always-on Rev Bar. The 12/24-hour format and units follow the watch's system settings.
+Seven settings in v1, edited in the Garmin Connect phone app: Minute Style, one Readout per Slot (four settings), Weather temperature (feels like or actual, default feels like), and Always-on Rev Bar (MIP only). The 12/24-hour format and units follow the watch's system settings.
 
 ## Out of scope for v1
 
