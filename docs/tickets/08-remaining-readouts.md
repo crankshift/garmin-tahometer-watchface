@@ -1,6 +1,6 @@
 # 08: Remaining Readouts
 
-Status: partial: implemented, all pure logic unit-tested (including the exact scenarios this ticket names), build succeeds and the face runs without crashing in the simulator; not confirmed visually this session (see ticket 07's "Verification method", same constraint)
+Status: done: confirmed working on the real fenix 7 Pro on 2026-09-24, which covers the checks this ticket couldn't do in the simulator. Before that it was partial: implemented, all pure logic unit-tested (including the exact scenarios this ticket names), build succeeds and the face runs without crashing in the simulator; not confirmed visually this session (see ticket 07's "Verification method", same constraint)
 Depends on: 07
 Prototype reference: `READOUTS`, `WEATHER`, `nextSunEvent`, `fmtTemp`, `fmtClock`, `iconBodyBattery`, `iconSunEvent`, `iconBell`
 

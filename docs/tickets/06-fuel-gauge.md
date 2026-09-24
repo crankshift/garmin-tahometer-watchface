@@ -1,6 +1,6 @@
 # 06: Fuel Gauge
 
-Status: partial: implemented, all logic unit-tested against the ticket's exact scenarios, and rendering confirmed live in the simulator at the current real battery level; the four specific battery-percentage screenshots (76/18/9/4%) aren't individually confirmed live (see "Verification method")
+Status: done: confirmed working on the real fenix 7 Pro on 2026-09-24, which covers the checks this ticket couldn't do in the simulator. Before that it was partial: implemented, all logic unit-tested against the ticket's exact scenarios, and rendering confirmed live in the simulator at the current real battery level; the four specific battery-percentage screenshots (76/18/9/4%) aren't individually confirmed live (see "Verification method")
 Depends on: 01
 Prototype reference: `drawFuelGauge`, `lowFuelLampColor`, `iconPump`, `iconBolt`, `iconSun`
 

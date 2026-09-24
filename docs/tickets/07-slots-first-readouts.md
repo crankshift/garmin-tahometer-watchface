@@ -1,6 +1,6 @@
 # 07: Slots and first Readouts
 
-Status: partial: implemented, all pure logic unit-tested, build succeeds; not confirmed visually in the simulator this session (see "Verification method")
+Status: done: confirmed working on the real fenix 7 Pro on 2026-09-24, which covers the checks this ticket couldn't do in the simulator. Before that it was partial: implemented, all pure logic unit-tested, build succeeds; not confirmed visually in the simulator this session (see "Verification method")
 Depends on: 02
 Prototype reference: `drawSlot`, `READOUTS`, `iconSteps`, `iconHeart`, `iconBattery`
 

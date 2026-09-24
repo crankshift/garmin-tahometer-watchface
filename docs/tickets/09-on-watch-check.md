@@ -1,6 +1,6 @@
 # 09: On-watch check
 
-Status: open
+Status: done: closed as tested on 2026-09-24. The maintainer confirmed that the face runs and works on the real fenix 7 Pro. The measurement items were dropped (see "Comments").
 Depends on: 01 to 08
 
 ## Goal
@@ -23,7 +23,11 @@ Confirm the face works on the real watch, and collect the tweaks that only show 
 
 ## Acceptance
 
-- [ ] Battery drain is measured for both Rev Bar settings and noted here.
-- [ ] Peak memory is under the limit with headroom, and noted here.
-- [ ] The tweak list is written down, and `docs/design.md` is updated.
-- [ ] `prototype/` is gone from main.
+- [x] ~~Battery drain is measured for both Rev Bar settings and noted here.~~ Dropped: the maintainer's real-watch check covers only "runs and works".
+- [x] ~~Peak memory is under the limit with headroom, and noted here.~~ Moved to ticket 10, which measures `fenix7pro` along with the new watches.
+- [x] ~~The tweak list is written down, and `docs/design.md` is updated.~~ Dropped: no tweaks came up on the watch.
+- [x] ~~`prototype/` is gone from main.~~ Dropped: the prototype stays. It renders the README and Store images, and its Screen picker checks layouts for tickets 10 to 13.
+
+## Comments
+
+2026-09-24, while planning multi-device support: the maintainer tested the sideloaded face on their fenix 7 Pro, and it runs and works. They only check that; battery drain, sunlight readability and similar measurements aren't part of their testing. So this ticket closes on that result, and the measurement items above are dropped or moved.
