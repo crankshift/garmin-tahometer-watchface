@@ -1,16 +1,24 @@
 <!doctype html>
 <!--
-  PROTOTYPE: throwaway. The design is locked (decisions live in docs/design.md); this file stays only as
-  the geometry reference for the Monkey C port and is deleted in ticket 09.
+  PROTOTYPE: throwaway. The design is locked (decisions live in docs/design.md); this file stays as the
+  geometry reference for the Monkey C port and as the source of the high-resolution face renders.
 
   Plan: two layout variants of the tachometer watch face (A: Gear below center, B: Gear inside the
   Tachometer with the Top Slot moved to the center row), switchable via ?variant=A|B and the floating
   bar, on this single page. The numeral font (DIN condensed or 7-segment) is a panel toggle.
   Everything else follows docs/design.md.
 
+  Multi-device questions: does the layout hold at every supported screen size, which awake extras
+  should AMOLED watches get, and does the AMOLED always-on view stay under Garmin's limit of 10% lit
+  pixels (above it the always-on face goes black)? The Screen picker lists every supported
+  size, smallest to largest (240/260/280 MIP, 360/390/416/454/466 AMOLED), and scales the face
+  proportionally, the way the port will. On AMOLED sizes the panel toggles each of the five candidate
+  extras, and low power swaps in the always-on view with a live lit-pixel count.
+  Start on a size with ?screen=454, and add &aod=1 for the always-on view.
+
   All drawing goes through the `Dc` shim below, which mirrors Toybox.Graphics.Dc method names and
   semantics (degrees counter-clockwise from 3 o'clock, justify flags, 64-point polygons), so the
-  Monkey C port stays mechanical. Every frame is snapped to the 64-color MIP palette.
+  Monkey C port stays mechanical. MIP frames are snapped to the 64-color MIP palette.
 
   Run: open prototype/index.html
 -->
@@ -42,17 +50,24 @@
               display: flex; gap: 10px; align-items: center; padding: 6px 10px; border-radius: 999px;
               background: #fff; color: #000; font-weight: 600; box-shadow: 0 4px 16px rgba(0, 0, 0, .6); }
   #switcher button { border: 0; background: #000; color: #fff; border-radius: 50%; width: 28px; height: 28px; }
+  .watch.amoled { image-rendering: auto; }
+  #amExtras.off { opacity: .4; pointer-events: none; }
 </style>
 </head>
 <body>
 <header>
-  <b>PROTOTYPE</b> (throwaway): tachometer watch face for fenix 7 Pro 47mm, 260×260 MIP.
-  Left: 3× zoom. Right: 1×. Colors snapped to the 64-color palette. ← → switch layout variant.
+  <b>PROTOTYPE</b> (throwaway): tachometer watch face. Pick the screen in the panel.
+  MIP: left 3× zoom, right 1×, colors snapped to the 64-color palette. AMOLED: left enlarged, right
+  shrunk to fit; untick Awake for the always-on view. ← → switch layout variant.
 </header>
 <main>
   <canvas id="big" class="watch" width="780" height="780"></canvas>
   <div class="side">
     <canvas id="small" class="watch" width="260" height="260"></canvas>
+
+    <fieldset><legend>Screen</legend>
+      <label><span>Size</span><select id="screen"></select></label>
+    </fieldset>
 
     <fieldset><legend>Time</legend>
       <label><span>Time of day</span><input id="scrub" type="range" min="0" max="86399" step="1"><span class="val" id="scrubVal"></span></label>
@@ -66,6 +81,19 @@
       <label><button id="wrist">Raise wrist (10 s)</button><button id="budget">Exceed power budget</button></label>
     </fieldset>
 
+    <fieldset><legend>AMOLED extras (prototype)</legend>
+      <div id="amExtras">
+        <label><span>1. Anti-aliasing</span><input type="checkbox" data-am="aa"></label>
+        <label><span>2. Redline gradient</span><input type="checkbox" data-am="gradient"></label>
+        <label><span>3. Minute Style glow</span><input type="checkbox" data-am="glowMinute"></label>
+        <label><span>4. Rev Bar glow</span><input type="checkbox" data-am="glowRev"></label>
+        <label><span>5. Gear glow</span><input type="checkbox" data-am="glowGear"></label>
+        <label><span>Always-on: numerals</span><input type="checkbox" data-am="aodNumerals"></label>
+        <label><span>Always-on: Slots</span><input type="checkbox" data-am="aodSlots"></label>
+        <label><span>Always-on: Fuel Gauge</span><input type="checkbox" data-am="aodFuel"></label>
+      </div>
+    </fieldset>
+
     <fieldset><legend>Watch face settings (Garmin Connect app)</legend>
       <label><span>Minute Style</span>
         <select data-key="minuteStyle"><option value="needle">Needle</option><option value="sweep">Sweep</option><option value="sweepTip">Sweep + Tip</option></select></label>
@@ -75,7 +103,7 @@
       <label><span>Bottom Slot</span><select class="readout" data-key="slots.bottom"></select></label>
       <label><span>Weather temperature</span>
         <select data-key="weatherTemp"><option value="feelsLike">Feels like</option><option value="actual">Actual</option></select></label>
-      <label><span>Always-on Rev Bar</span><input type="checkbox" data-key="alwaysOnRevBar"></label>
+      <label><span>Always-on Rev Bar (MIP only)</span><input type="checkbox" data-key="alwaysOnRevBar"></label>
     </fieldset>
 
     <fieldset><legend>Prototype only</legend>
@@ -142,15 +170,25 @@ const polar = (deg, r) => [CX + r * Math.cos(deg * Math.PI / 180), CY - r * Math
 
 // ---- Dc shim: Toybox.Graphics.Dc names and semantics on top of canvas 2D ----------------------
 class Dc {
-  constructor(ctx) { this.ctx = ctx; this.fg = COLOR_WHITE; this.bg = COLOR_BLACK; this.pen = 1; }
+  // alpha stands for Graphics.createColor(alpha, r, g, b) with setStroke/setFill (API 4.0+, AMOLED only).
+  // blur stands for a pre-blurred "glow" bitmap font; the watch can't blur at runtime.
+  // transparent makes clear() leave the layer see-through so AMOLED layers can be composited.
+  constructor(ctx) { this.ctx = ctx; this.fg = COLOR_WHITE; this.bg = COLOR_BLACK; this.pen = 1; this.alpha = 1; this.blur = 0; this.transparent = false; }
   static css(c) { return '#' + c.toString(16).padStart(6, '0'); }
   setColor(fg, bg) { this.fg = fg; if (bg !== undefined) this.bg = bg; }
   setPenWidth(w) { this.pen = w; }
-  clear() { this.ctx.fillStyle = Dc.css(this.bg); this.ctx.fillRect(0, 0, W, H); }
+  setAlpha(a) { this.alpha = a; }
+  clear() {
+    if (this.transparent) { this.ctx.clearRect(0, 0, W, H); return; }
+    this.ctx.fillStyle = Dc.css(this.bg); this.ctx.fillRect(0, 0, W, H);
+  }
   setClip(x, y, w, h) { this.ctx.save(); this.ctx.beginPath(); this.ctx.rect(x, y, w, h); this.ctx.clip(); }
   clearClip() { this.ctx.restore(); }
-  _stroke() { const c = this.ctx; c.strokeStyle = Dc.css(this.fg); c.lineWidth = this.pen; c.lineCap = 'butt'; c.stroke(); }
-  _fill() { this.ctx.fillStyle = Dc.css(this.fg); this.ctx.fill(); }
+  _stroke() {
+    const c = this.ctx; c.globalAlpha = this.alpha;
+    c.strokeStyle = Dc.css(this.fg); c.lineWidth = this.pen; c.lineCap = 'butt'; c.stroke(); c.globalAlpha = 1;
+  }
+  _fill() { const c = this.ctx; c.globalAlpha = this.alpha; c.fillStyle = Dc.css(this.fg); c.fill(); c.globalAlpha = 1; }
   drawLine(x1, y1, x2, y2) { const c = this.ctx; c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); this._stroke(); }
   drawArc(x, y, r, attr, degStart, degEnd) {
     const c = this.ctx, k = Math.PI / 180;
@@ -183,7 +221,21 @@ class Dc {
     const top = justify & TEXT_JUSTIFY_VCENTER ? y - capH / 2 : y;
     if (font.kind === 'seg7') { drawSeg7(this, left, top, font, text); return; }
     const c = this.ctx; c.font = font.css; c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+    c.globalAlpha = this.alpha; c.filter = this.blur ? `blur(${this.blur}px)` : 'none';
     c.fillStyle = Dc.css(this.fg); c.fillText(text, left, top + capH);
+    c.filter = 'none'; c.globalAlpha = 1;
+  }
+  // PROTOTYPE ONLY: on the watch the outline Gear is its own bitmap font (glyph outlines baked by
+  // tools/gen_bitmap_font.py), drawn with plain drawText. Here the pen width is the outline width.
+  drawTextOutline(x, y, font, text, justify) {
+    if (font.kind === 'seg7') { this.drawText(x, y, font, text, justify); return; }
+    text = String(text);
+    const w = this.getTextWidthInPixels(text, font), h = justify & 3, capH = this.fontHeight(font);
+    const left = h === TEXT_JUSTIFY_CENTER ? x - w / 2 : h === TEXT_JUSTIFY_RIGHT ? x - w : x;
+    const top = justify & TEXT_JUSTIFY_VCENTER ? y - capH / 2 : y;
+    const c = this.ctx; c.font = font.css; c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+    c.strokeStyle = Dc.css(this.fg); c.lineWidth = this.pen; c.lineJoin = 'round';
+    c.strokeText(text, left, top + capH);
   }
 }
 
@@ -252,6 +304,27 @@ const S = {
 };
 const revBarVisible = s => s.awake || (s.alwaysOnRevBar && !s.budgetExceeded);
 
+// Every supported screen, smallest to largest. The display type follows the size: no in-scope watch
+// has a MIP screen above 280 or an AMOLED screen below 360.
+const SCREENS = [
+  { px: 240, amoled: false, example: 'fenix 7S' }, { px: 260, amoled: false, example: 'fenix 7 Pro' },
+  { px: 280, amoled: false, example: 'fenix 7X' }, { px: 360, amoled: true, example: 'FR 265S' },
+  { px: 390, amoled: true, example: 'FR 165' }, { px: 416, amoled: true, example: 'FR 265' },
+  { px: 454, amoled: true, example: 'FR 965' }, { px: 466, amoled: true, example: 'fenix 9 Pro 51' },
+];
+const q = new URLSearchParams(location.search);
+let scr = SCREENS.find(sc => sc.px === Number(q.get('screen'))) ?? SCREENS[1];
+if (q.get('aod') === '1') S.awake = false;
+
+// AMOLED extras. All five start on so each one can be judged by switching it off.
+const AM = {
+  aa: true, gradient: true, glowMinute: true, glowRev: true, glowGear: true,
+  aodNumerals: true, aodSlots: true, aodFuel: true,
+};
+// Drawing code reads the extras through FX, so the MIP look never sees them.
+const NO_FX = { gradient: false };
+let FX = NO_FX;
+
 // ---- Face ---------------------------------------------------------------------------------------
 function drawFace(dc, s, v, f) {
   const m = s.t.getMinutes();
@@ -268,14 +341,14 @@ function drawFace(dc, s, v, f) {
 
 function drawTachometer(dc, s, f, m) {
   dc.setPenWidth(BAND_W);
-  dc.setColor(C_REDLINE_UNLIT);
-  dc.drawArc(CX, CY, R_BAND, ARC_CLOCKWISE, minuteDeg(50), minuteDeg(60));
+  if (FX.gradient) redlineGradient(dc, 50, 60, REDLINE_UNLIT_GRADIENT);
+  else { dc.setColor(C_REDLINE_UNLIT); dc.drawArc(CX, CY, R_BAND, ARC_CLOCKWISE, minuteDeg(50), minuteDeg(60)); }
   if (s.minuteStyle !== 'needle' && m > 0) {
     dc.setColor(C_MINUTE);
     dc.drawArc(CX, CY, R_BAND, ARC_CLOCKWISE, minuteDeg(0), minuteDeg(Math.min(m, 50)));
     if (m > 50) {
-      dc.setColor(C_REDLINE);
-      dc.drawArc(CX, CY, R_BAND, ARC_CLOCKWISE, minuteDeg(50), minuteDeg(m));
+      if (FX.gradient) redlineGradient(dc, 50, m, REDLINE_LIT_GRADIENT);
+      else { dc.setColor(C_REDLINE); dc.drawArc(CX, CY, R_BAND, ARC_CLOCKWISE, minuteDeg(50), minuteDeg(m)); }
     }
   }
   for (let i = 0; i <= 60; i++) {
@@ -326,9 +399,10 @@ function drawGear(dc, s, v, f) {
 }
 
 const ICON = 14;
-function drawSlot(dc, [x, y], inline, r) {
+// aod: the AMOLED always-on view dims white values to light grey; icons keep their colors.
+function drawSlot(dc, [x, y], inline, r, aod = false) {
   if (!r) return;
-  const valueColor = r.color ?? COLOR_WHITE, iconColor = r.iconColor ?? COLOR_WHITE;
+  const valueColor = r.color ?? (aod ? C_AOD : COLOR_WHITE), iconColor = r.iconColor ?? (aod ? C_AOD : COLOR_WHITE);
   if (inline) {
     const lead = r.head ? dc.getTextWidthInPixels(r.head, F_HEAD) : ICON;
     const x0 = x - (lead + 5 + dc.getTextWidthInPixels(r.text, F_VALUE)) / 2;
@@ -356,6 +430,100 @@ function drawFuelGauge(dc, s) {
   else if (s.solar > 0) iconSun(dc, rx, ry, COLOR_YELLOW, 3);
 }
 const lowFuelLampColor = b => b <= 10 ? COLOR_RED : b <= 20 ? COLOR_YELLOW : COLOR_DK_GRAY;
+
+// ---- AMOLED extras ----------------------------------------------------------------------------
+// Extra 2: the Redline band runs dark to bright from minute 50 to 60, drawn as half-minute arcs
+// (the watch has no gradient fill). The color at a minute is fixed, so a lit sweep that stops at 53
+// ends in the minute-53 color.
+const REDLINE_UNLIT_GRADIENT = [0x220000, 0x770000], REDLINE_LIT_GRADIENT = [0xAA0000, 0xFF3300];
+const lerpColor = (a, b, t) => [16, 8, 0].reduce((c, sh) =>
+  c | Math.round(((a >> sh) & 255) + (((b >> sh) & 255) - ((a >> sh) & 255)) * t) << sh, 0);
+function redlineGradient(dc, from, to, [c0, c1]) {
+  for (let mm = from; mm < to; mm += 0.5) {
+    dc.setColor(lerpColor(c0, c1, (mm + 0.25 - 50) / 10));
+    dc.drawArc(CX, CY, R_BAND, ARC_CLOCKWISE, minuteDeg(mm) + 0.2, minuteDeg(Math.min(mm + 0.5, to)));
+  }
+}
+
+// Extras 3 to 5 go on a layer under the face. An arc or needle glows as three wider strokes at low
+// alpha, widest first, which is how the watch would draw it (it can't blur shapes).
+const GLOW = [[5, 0.10], [3.5, 0.16], [2, 0.26]];   // [extra px on each side, alpha]
+function glowStroke(dc, pen, draw) {
+  for (const [extra, a] of GLOW) { dc.setAlpha(a); dc.setPenWidth(pen + 2 * extra); draw(); }
+  dc.setAlpha(1);
+}
+function drawGlow(dc, s, v, f, k) {
+  dc.clear();
+  const m = s.t.getMinutes(), sec = s.t.getSeconds();
+  if (AM.glowMinute) {
+    const arc = (a, b) => () => dc.drawArc(CX, CY, R_BAND, ARC_CLOCKWISE, minuteDeg(a), minuteDeg(b));
+    if (s.minuteStyle !== 'needle' && m > 0) {
+      dc.setColor(C_MINUTE); glowStroke(dc, BAND_W, arc(0, Math.min(m, 50)));
+      if (m > 50) { dc.setColor(C_REDLINE); glowStroke(dc, BAND_W, arc(50, m)); }
+    }
+    const tip = s.minuteStyle === 'sweepTip' ? [R_TICK - 8, R] : s.minuteStyle === 'needle' ? [v.floatingNeedle ? R_REV + 4 : 0, R - 8] : null;
+    if (tip) {
+      const [x1, y1] = polar(minuteDeg(m), tip[0]), [x2, y2] = polar(minuteDeg(m), tip[1]);
+      dc.setColor(m >= 50 ? C_REDLINE : C_MINUTE); glowStroke(dc, 3, () => dc.drawLine(x1, y1, x2, y2));
+    }
+  }
+  if (AM.glowRev) {
+    const arc = (a, b) => () => dc.drawArc(CX, CY, R_REV, ARC_CLOCKWISE, minuteDeg(a), minuteDeg(b));
+    dc.setColor(COLOR_WHITE); glowStroke(dc, REV_W, arc(0, Math.min(sec + 1, 50)));
+    if (sec >= 50) { dc.setColor(C_REDLINE); glowStroke(dc, REV_W, arc(50, sec + 1)); }
+  }
+  if (AM.glowGear) {
+    const [gx, gy] = v.gear;
+    dc.setColor(COLOR_WHITE); dc.setAlpha(0.45); dc.blur = 7 * k;
+    dc.drawText(gx, gy, f.gear, gearText(s), JUSTIFY_MIDDLE);
+    dc.setAlpha(1); dc.blur = 0;
+  }
+}
+
+// ---- AMOLED always-on view --------------------------------------------------------------------
+// Drawn once a minute. No Rev Bar (AMOLED watch faces get no partial updates). Slots (values dimmed)
+// and a thin Fuel Gauge (lit segments only) are panel toggles, to measure what they cost against the
+// 10% limit. The minute is always a thin floating needle, whatever the Minute Style. No burn-in pixel
+// shift: Garmin's per-pixel burn-in rule only applied to the original Venu, which is out of scope.
+const C_AOD = COLOR_LT_GRAY, C_AOD_REDLINE = 0xAA0000;
+function drawAod(dc, s, v, f) {
+  dc.clear();
+  const m = s.t.getMinutes();
+  dc.setPenWidth(2);
+  for (let i = 0; i <= 60; i += 10) {
+    const [x1, y1] = polar(minuteDeg(i), R_TICK), [x2, y2] = polar(minuteDeg(i), R_TICK - TICKS.major[0]);
+    dc.setColor(i >= 50 ? C_AOD_REDLINE : C_AOD); dc.drawLine(x1, y1, x2, y2);
+  }
+  if (AM.aodNumerals) {
+    for (let n = 0; n <= 6; n++) {
+      const [x, y] = polar(minuteDeg(n * 10), R_NUM);
+      dc.setColor(n >= 5 ? C_AOD_REDLINE : C_AOD); dc.drawText(x, y, f.num, n, JUSTIFY_MIDDLE);
+    }
+  }
+  const [gx, gy] = v.gear, text = gearText(s);
+  dc.setColor(C_AOD); dc.setPenWidth(1.3); dc.drawTextOutline(gx, gy, f.gear, text, JUSTIFY_MIDDLE);
+  if (!s.is24) {
+    const ampm = s.t.getHours() < 12 ? 'AM' : 'PM', w = dc.getTextWidthInPixels(text, f.gear), capH = dc.fontHeight(f.gear);
+    if (v.ampmBelow) dc.drawText(gx, gy + capH / 2 + 9, F_SMALL, ampm, JUSTIFY_MIDDLE);
+    else dc.drawText(gx + w / 2 + 4, gy - capH / 2 + 6, F_SMALL, ampm, JUSTIFY_LEFT_MIDDLE);
+  }
+  if (AM.aodSlots) {
+    for (const [name, pos] of Object.entries(v.slots)) drawSlot(dc, pos, !v.stacked.includes(name), READOUTS[s.slots[name]](s), true);
+  }
+  if (AM.aodFuel) drawAodFuelGauge(dc, s);
+  const [x1, y1] = polar(minuteDeg(m), R_REV + 4), [x2, y2] = polar(minuteDeg(m), R - 8);
+  dc.setColor(m >= 50 ? C_REDLINE : C_MINUTE); dc.setPenWidth(2); dc.drawLine(x1, y1, x2, y2);
+}
+
+// Lit segments only, 3 px instead of 8. The pump icon shows only once the Low-Fuel Lamp is amber or red.
+function drawAodFuelGauge(dc, s) {
+  const lit = Math.round(s.battery / 10), seg = FUEL_SPAN / FUEL_SEGS;
+  dc.setPenWidth(3); dc.setColor(C_AOD);
+  for (let i = 0; i < lit; i++) {
+    dc.drawArc(CX, CY, R_BAND, ARC_COUNTER_CLOCKWISE, FUEL_FROM + i * seg + 0.8, FUEL_FROM + (i + 1) * seg - 0.8);
+  }
+  if (s.battery <= 20) { const [lx, ly] = polar(FUEL_FROM - 12, R_BAND - 10); iconPump(dc, lx, ly, lowFuelLampColor(s.battery)); }
+}
 
 // ---- Readouts -----------------------------------------------------------------------------------
 const DOW = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
@@ -485,15 +653,19 @@ function iconBolt(dc, x, y, c) {
   dc.fillPolygon([[x + 2, y - 7], [x - 4, y + 1], [x - 0.5, y + 1], [x - 2, y + 7], [x + 4, y - 1], [x + 0.5, y - 1]]);
 }
 
-// ---- Rendering: draw at 260 px, snap to the MIP palette, then scale up without smoothing ---------
-const off = document.createElement('canvas'); off.width = W; off.height = H;
-const offCtx = off.getContext('2d', { willReadFrequently: true });
-const dc = new Dc(offCtx);
+// ---- Rendering ----------------------------------------------------------------------------------
+// The face is drawn at the screen's real resolution with every coordinate scaled by size/260, which
+// is the proportional scaling the port will do (fonts included: the port generates a font set per
+// resolution). MIP then snaps to the 64-color palette and is shown 3× without smoothing. AMOLED
+// composites a glow layer under the face and keeps full color.
 const views = [document.getElementById('big'), document.getElementById('small')];
 const stateEl = document.getElementById('state');
+const layer = () => { const c = document.createElement('canvas'); return { c, ctx: c.getContext('2d', { willReadFrequently: true }) }; };
+const mipLayer = layer(), amBase = layer(), amGlow = layer(), amOut = layer();
+let layerSize = 0, aodStats = null;
 
-function snapToMipPalette(ctx) {
-  const img = ctx.getImageData(0, 0, W, H), d = img.data;
+function snapToMipPalette(ctx, px) {
+  const img = ctx.getImageData(0, 0, px, px), d = img.data;
   for (let i = 0; i < d.length; i += 4) {
     d[i] = Math.round(d[i] / 85) * 85; d[i + 1] = Math.round(d[i + 1] / 85) * 85; d[i + 2] = Math.round(d[i + 2] / 85) * 85;
     d[i + 3] = 255;
@@ -501,19 +673,79 @@ function snapToMipPalette(ctx) {
   ctx.putImageData(img, 0, 0);
 }
 
+// Canvases hold the real pixels; CSS sets the on-page size (MIP 3× and 1×, AMOLED enlarged and shrunk).
+function sizeViews(px, amoled) {
+  const css = amoled ? [780, 260] : [3 * px, px];
+  views.forEach((cv, i) => {
+    if (cv.width !== px) { cv.width = px; cv.height = px; }
+    cv.style.width = cv.style.height = `${css[i]}px`;
+    cv.classList.toggle('amoled', amoled);
+  });
+}
+
 function render() {
-  const v = VARIANTS[vi], f = FONTS[S.font];
-  drawFace(dc, S, v, f);
-  snapToMipPalette(offCtx);
-  for (const cv of views) {
-    const c = cv.getContext('2d'); c.imageSmoothingEnabled = false; c.drawImage(off, 0, 0, cv.width, cv.height);
+  const v = VARIANTS[vi], f = FONTS[S.font], px = scr.px;
+  if (layerSize !== px) {
+    layerSize = px;
+    for (const l of [mipLayer, amBase, amGlow, amOut]) { l.c.width = px; l.c.height = px; }
+  }
+  sizeViews(px, scr.amoled);
+  if (scr.amoled) renderAmoled(v, f);
+  else {
+    FX = NO_FX; aodStats = null;
+    const dc = new Dc(mipLayer.ctx);
+    mipLayer.ctx.setTransform(px / W, 0, 0, px / W, 0, 0);
+    drawFace(dc, S, v, f);
+    snapToMipPalette(mipLayer.ctx, px);
+    for (const cv of views) cv.getContext('2d').drawImage(mipLayer.c, 0, 0);
   }
   stateEl.textContent = describe(S, v, f);
 }
 
+function renderAmoled(v, f) {
+  const px = scr.px, k = px / W, aod = !S.awake;
+  FX = AM;
+
+  const base = new Dc(amBase.ctx); base.transparent = true;
+  amBase.ctx.setTransform(k, 0, 0, k, 0, 0);
+  if (aod) drawAod(base, S, v, f); else drawFace(base, S, v, f);
+  if (!AM.aa) hardenEdges(amBase.ctx, px);
+
+  const glow = new Dc(amGlow.ctx); glow.transparent = true;
+  amGlow.ctx.setTransform(k, 0, 0, k, 0, 0);
+  if (aod) glow.clear(); else drawGlow(glow, S, v, f, k);
+
+  const o = amOut.ctx;
+  o.fillStyle = '#000'; o.fillRect(0, 0, px, px);
+  o.drawImage(amGlow.c, 0, 0); o.drawImage(amBase.c, 0, 0);
+
+  if (aod) aodStats = measureAod(o, px);
+  else aodStats = null;
+
+  for (const cv of views) cv.getContext('2d').drawImage(amOut.c, 0, 0);
+}
+
+// Anti-aliasing off: every pixel is either fully drawn or not drawn, like Dc with setAntiAlias(false).
+function hardenEdges(ctx, px) {
+  const img = ctx.getImageData(0, 0, px, px), d = img.data;
+  for (let i = 3; i < d.length; i += 4) d[i] = d[i] >= 128 ? 255 : 0;
+  ctx.putImageData(img, 0, 0);
+}
+
+// Garmin's AMOLED always-on limit: at most 10% of the screen lit, or the always-on face goes black.
+// Any non-black pixel counts as lit here. API 5.0+ watches reportedly measure brightness instead,
+// which is looser, so this count is the stricter check.
+function measureAod(ctx, px) {
+  const d = ctx.getImageData(0, 0, px, px).data;
+  let lit = 0;
+  for (let i = 0; i < d.length; i += 4) if (d[i] > 0 || d[i + 1] > 0 || d[i + 2] > 0) lit++;
+  return { litPct: 100 * lit / (Math.PI * (px / 2) ** 2) };
+}
+
 function describe(s, v, f) {
   const m = s.t.getMinutes(), sec = s.t.getSeconds(), b = Math.round(s.battery);
-  const rev = revBarVisible(s) ? `visible, ${sec + 1}/60 segments`
+  const rev = scr.amoled && !s.awake ? 'hidden (AMOLED always-on: no partial updates, setting ignored)'
+    : revBarVisible(s) ? `visible, ${sec + 1}/60 segments`
     : s.alwaysOnRevBar ? 'hidden (power budget exceeded, until next wake)' : 'hidden (low power)';
   const lamp = b <= 10 ? 'red' : b <= 20 ? 'amber' : 'grey';
   const slot = k => { const r = READOUTS[s.slots[k]](s); return r ? `${k}=${r.head ? r.head + ' ' : ''}${r.text}` : `${k}=(empty)`; };
@@ -528,7 +760,22 @@ function describe(s, v, f) {
     `Fuel Gauge  ${Math.round(s.battery / 10)}/10 segments at ${b}%, Low-Fuel Lamp ${lamp}, ${s.charging ? 'bolt' : s.solar > 0 ? 'sun' : 'no'} icon`,
     `Slots       ${['top', 'left', 'right', 'bottom'].map(slot).join('  ')}  (weather shows ${s.weatherTemp === 'feelsLike' ? 'feels-like' : 'actual'} temperature)`,
     `variant     ${v.key} (${v.name}), font ${f.name}${fontOk ? '' : ', DIN Condensed missing so a fallback font is in use'}`,
+    ...describeDisplay(s),
   ].join('\n');
+}
+
+function describeDisplay(s) {
+  const scale = `everything scaled ${(scr.px / W).toFixed(2)}×`;
+  if (!scr.amoled) return [`display     MIP ${scr.px}×${scr.px} (${scr.example}), ${scale}, 64-color palette`];
+  const extras = [['aa', 'anti-aliasing'], ['gradient', 'Redline gradient'], ['glowMinute', 'Minute Style glow'],
+                  ['glowRev', 'Rev Bar glow'], ['glowGear', 'Gear glow']].filter(([key]) => AM[key]).map(([, name]) => name);
+  const lines = [`display     AMOLED ${scr.px}×${scr.px} (${scr.example}), ${scale}, ${s.awake ? 'awake face' : 'always-on view'}`];
+  if (s.awake) lines.push(`extras      ${extras.length ? extras.join(', ') : 'none'}`);
+  else if (aodStats) {
+    const pct = aodStats.litPct;
+    lines.push(`lit pixels  ${pct.toFixed(1)}% of the screen (limit 10%): ${pct <= 10 ? 'OK' : 'FAILS, the face would go black'}`);
+  }
+  return lines;
 }
 
 // ---- Controls -----------------------------------------------------------------------------------
@@ -555,6 +802,19 @@ for (const el of bound) {
     syncControls();
   });
 }
+
+const amEls = [...document.querySelectorAll('[data-am]')], amExtras = document.getElementById('amExtras');
+function syncAm() {
+  for (const el of amEls) { const val = AM[el.dataset.am]; if (el.type === 'checkbox') el.checked = val; else el.value = val; }
+  amExtras.classList.toggle('off', !scr.amoled);
+}
+for (const el of amEls) {
+  el.addEventListener('input', () => { AM[el.dataset.am] = el.checked; syncAm(); });
+}
+const screenSel = document.getElementById('screen');
+for (const sc of SCREENS) screenSel.add(new Option(`${sc.px} ${sc.amoled ? 'AMOLED' : 'MIP'} (${sc.example})`, sc.px));
+screenSel.value = scr.px;
+screenSel.addEventListener('input', () => { scr = SCREENS.find(sc => sc.px === Number(screenSel.value)); syncAm(); });
 
 const scrub = document.getElementById('scrub'), scrubVal = document.getElementById('scrubVal');
 scrub.addEventListener('input', () => {
@@ -603,6 +863,7 @@ function tick(now) {
 }
 setVariant(vi);
 syncControls();
+syncAm();
 render();
 requestAnimationFrame(tick);
 </script>
