@@ -30,3 +30,16 @@ function testLowFuelLampColorBoundaries(logger as Test.Logger) as Boolean {
         && FuelGauge.lowFuelLampColor(11) == Graphics.COLOR_YELLOW
         && FuelGauge.lowFuelLampColor(10) == Graphics.COLOR_RED;
 }
+
+(:test)
+function testFuelGaugeLayoutAtV1ScaleEqualsTheV1Constants(logger as Test.Logger) as Boolean {
+    var l = new FuelGauge.Layout(130.0f);
+    return l.rBand == 124.0 && l.bandW == 8 && l.iconR == 114.0;
+}
+
+(:test)
+function testFuelGaugeLayoutAt454ScalesByTheScreenWidthOver260(logger as Test.Logger) as Boolean {
+    var l = new FuelGauge.Layout(227.0f);
+    var s = 454.0 / 260.0;
+    return nearly(l.rBand, 124 * s) && l.bandW == 14 && nearly(l.iconR, 114 * s);
+}

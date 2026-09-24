@@ -35,3 +35,16 @@ function testGearTextTwentyThreeIsElevenInTwelveHour(logger as Test.Logger) as B
 function testIsAMBeforeNoon(logger as Test.Logger) as Boolean {
     return Gear.isAM(0) && Gear.isAM(11) && !Gear.isAM(12) && !Gear.isAM(23);
 }
+
+(:test)
+function testGearLayoutAtV1ScaleEqualsTheV1Constants(logger as Test.Logger) as Boolean {
+    var l = new Gear.Layout(130.0f);
+    return l.centerY == 94.0 && l.ampmGap == 9.0;
+}
+
+(:test)
+function testGearLayoutAt454ScalesByTheScreenWidthOver260(logger as Test.Logger) as Boolean {
+    var l = new Gear.Layout(227.0f);
+    var s = 454.0 / 260.0;
+    return nearly(l.centerY, 94 * s) && nearly(l.ampmGap, 9 * s);
+}

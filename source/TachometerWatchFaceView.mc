@@ -20,6 +20,15 @@ class TachometerWatchFaceView extends WatchUi.WatchFace {
     }
 
     function onLayout(dc as Graphics.Dc) as Void {
+        // Every fixed pixel value is written for 260 px; scale them to this screen once here, so
+        // onUpdate and onPartialUpdate only read them (docs/specs/multi-device.md "Scaling").
+        Screen.fit(dc.getWidth());
+        Tachometer.fit(Screen.radius);
+        RevBar.fit(Screen.radius);
+        Gear.fit(Screen.radius);
+        FuelGauge.fit(Screen.radius);
+        Slots.fit(Screen.radius);
+
         _tachometerNumeralFont = WatchUi.loadResource(Rez.Fonts.TachometerNumeralFont) as Graphics.FontDefinition;
         _gearFont = WatchUi.loadResource(Rez.Fonts.GearFont) as Graphics.FontDefinition;
         _smallFont = WatchUi.loadResource(Rez.Fonts.SmallFont) as Graphics.FontDefinition;

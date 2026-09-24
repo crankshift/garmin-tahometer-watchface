@@ -3,15 +3,40 @@ import Toybox.Graphics;
 
 // Ported from prototype/index.html's drawSlot. Layout only; Readouts.mc supplies the content.
 module Slots {
-    const ICON_SIZE = 14.0;
-    const GAP = 5.0;
+    // Written for the 260 px screen and scaled by the screen's radius (docs/specs/multi-device.md
+    // "Scaling"). Built once in fit.
+    class Layout {
+        var iconSize as Float;
+        var gap as Float;
+        var stackedIconOffset as Float;  // icon (or head text) above the Slot point
+        var stackedValueOffset as Float; // value below it
+        var left as Array<Float>;
+        var center as Array<Float>;
+        var right as Array<Float>;
+        var bottom as Array<Float>;
 
-    const LEFT = [Constants.CX - 70, Constants.CY + 38];
-    const CENTER = [Constants.CX, Constants.CY + 38];
-    const RIGHT = [Constants.CX + 70, Constants.CY + 38];
-    const BOTTOM = [Constants.CX, Constants.CY + 84];
+        // Round screens: the center is at the radius, in x and in y.
+        function initialize(radius as Float) {
+            var s = Screen.scaleFor(radius);
+            iconSize = 14.0 * s;
+            gap = 5.0 * s;
+            stackedIconOffset = 11.0 * s;
+            stackedValueOffset = 10.0 * s;
+            left = [radius - 70 * s, radius + 38 * s] as Array<Float>;
+            center = [radius, radius + 38 * s] as Array<Float>;
+            right = [radius + 70 * s, radius + 38 * s] as Array<Float>;
+            bottom = [radius, radius + 84 * s] as Array<Float>;
+        }
+    }
 
-    // Icon (or head text) 11 px above the Slot point, value 10 px below.
+    // Starts as the 260 px layout; the view calls fit from onLayout.
+    var layout as Layout = new Layout(Screen.V1_RADIUS);
+
+    function fit(radius as Float) as Void {
+        layout = new Layout(radius);
+    }
+
+    // Icon (or head text) 11 px above the Slot point, value 10 px below (at 260 px).
     function drawStacked(
         dc as Graphics.Dc,
         pos as Array<Float>,
@@ -26,15 +51,15 @@ module Slots {
         var y = pos[1];
         if (content.head != null) {
             dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(x, y - 11, headFont, content.head, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+            dc.drawText(x, y - layout.stackedIconOffset, headFont, content.head, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
         } else {
-            Readouts.drawIcon(dc, content.kind, x, y - 11, content.iconColor, content.extra);
+            Readouts.drawIcon(dc, content.kind, x, y - layout.stackedIconOffset, content.iconColor, content.extra);
         }
         dc.setColor(content.textColor, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(x, y + 10, valueFont, content.text, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+        dc.drawText(x, y + layout.stackedValueOffset, valueFont, content.text, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
     }
 
-    // Icon, a 5 px gap, then the value, centered as one group.
+    // Icon, a 5 px gap (at 260 px), then the value, centered as one group.
     function drawInline(
         dc as Graphics.Dc,
         pos as Array<Float>,
@@ -47,17 +72,17 @@ module Slots {
         }
         var x = pos[0];
         var y = pos[1];
-        var lead = content.head != null ? dc.getTextWidthInPixels(content.head, headFont) : ICON_SIZE;
+        var lead = content.head != null ? dc.getTextWidthInPixels(content.head, headFont) : layout.iconSize;
         var valueWidth = dc.getTextWidthInPixels(content.text, valueFont);
-        var x0 = x - (lead + GAP + valueWidth) / 2.0;
+        var x0 = x - (lead + layout.gap + valueWidth) / 2.0;
         if (content.head != null) {
             dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
             dc.drawText(x0, y, headFont, content.head, Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
         } else {
-            Readouts.drawIcon(dc, content.kind, x0 + ICON_SIZE / 2.0, y, content.iconColor, content.extra);
+            Readouts.drawIcon(dc, content.kind, x0 + layout.iconSize / 2.0, y, content.iconColor, content.extra);
         }
         dc.setColor(content.textColor, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(x0 + lead + GAP, y, valueFont, content.text, Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
+        dc.drawText(x0 + lead + layout.gap, y, valueFont, content.text, Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
     }
 
     function draw(
@@ -69,9 +94,9 @@ module Slots {
         headFont as Graphics.FontDefinition,
         valueFont as Graphics.FontDefinition
     ) as Void {
-        drawStacked(dc, LEFT, Readouts.get(leftKind), headFont, valueFont);
-        drawStacked(dc, CENTER, Readouts.get(centerKind), headFont, valueFont);
-        drawStacked(dc, RIGHT, Readouts.get(rightKind), headFont, valueFont);
-        drawInline(dc, BOTTOM, Readouts.get(bottomKind), headFont, valueFont);
+        drawStacked(dc, layout.left, Readouts.get(leftKind), headFont, valueFont);
+        drawStacked(dc, layout.center, Readouts.get(centerKind), headFont, valueFont);
+        drawStacked(dc, layout.right, Readouts.get(rightKind), headFont, valueFont);
+        drawInline(dc, layout.bottom, Readouts.get(bottomKind), headFont, valueFont);
     }
 }

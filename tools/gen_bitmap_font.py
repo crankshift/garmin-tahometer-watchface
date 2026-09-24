@@ -9,17 +9,24 @@ plus the matching .png, in the layout Connect IQ's font resource compiler expect
 from the source font, so only the source TTF and this script need to be reviewed by hand;
 the generated .fnt/.png files are committed alongside for the build to use directly.
 
+The face scales in proportion to the screen (docs/specs/multi-device.md "Scaling"), and Connect
+IQ bitmap fonts don't scale, so every font is generated once per supported screen width. The
+sizes below are the ones for the 260 px screen, and each resolution gets size * px / 260,
+rounded half up. The 260 set goes in resources/fonts/, which every watch without a better match
+uses. The other sets go in resources-round-{px}x{px}/fonts/, which the build picks for watches
+with that screen.
+
 Usage: tools/gen_bitmap_font.py
 Requires: Pillow (pip install Pillow).
 """
 
+import math
 import os
 
 from PIL import Image, ImageDraw, ImageFont
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FONT_PATH = os.path.join(ROOT, "assets", "fonts", "BarlowCondensed-Bold.ttf")
-OUT_DIR = os.path.join(ROOT, "resources", "fonts")
 FACE_NAME = "Barlow Condensed Bold"
 PAD = 2  # px of transparent margin kept around every glyph, and between glyphs on the sheet
 
@@ -29,14 +36,30 @@ DIGITS = "0123456789"
 _SMALL_WORDS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN", "AM", "PM"]
 SMALL_LETTERS = "".join(sorted(set("".join(_SMALL_WORDS))))
 
-# name, pixel size (Connect IQ bitmap fonts don't scale, so this is the size drawn on watch),
-# glyphs.
+# The screen width the pixel sizes below are written for, and the widths to generate fonts for.
+V1_PX = 260
+RESOLUTIONS = [240, 260, 280, 360, 390, 416, 454, 466]
+
+# name, resource id, pixel size on the 260 px screen (Connect IQ bitmap fonts don't scale, so
+# this is the size drawn on watch), glyphs.
 FONTS = [
-    ("gear", 89, DIGITS),
-    ("tachometer_numeral", 24, "0123456"),
-    ("slot_value", 20, DIGITS + "-%°:"),
-    ("small", 15, SMALL_LETTERS),
+    ("gear", "GearFont", 89, DIGITS),
+    ("tachometer_numeral", "TachometerNumeralFont", 24, "0123456"),
+    ("slot_value", "SlotValueFont", 20, DIGITS + "-%°:"),
+    ("small", "SmallFont", 15, SMALL_LETTERS),
 ]
+
+
+def scaled_size(v1_size, px):
+    """The pixel size for a screen `px` wide. Halves round up (Python's round() would round 22.5 down)."""
+    return math.floor(v1_size * px / V1_PX + 0.5)
+
+
+def out_dir(px):
+    """resources/fonts for the 260 px set, resources-round-{px}x{px}/fonts for the others."""
+    if px == V1_PX:
+        return os.path.join(ROOT, "resources", "fonts")
+    return os.path.join(ROOT, f"resources-round-{px}x{px}", "fonts")
 
 
 def glyph_bitmap(font, ch):
@@ -63,7 +86,7 @@ def glyph_bitmap(font, ch):
     return cropped, xoffset, yoffset
 
 
-def build_font(name, size, chars):
+def build_font(directory, name, size, chars):
     font = ImageFont.truetype(FONT_PATH, size)
     ascent, descent = font.getmetrics()
     line_height = ascent + descent
@@ -97,7 +120,7 @@ def build_font(name, size, chars):
 
     png_name = f"{name}.png"
     fnt_name = f"{name}.fnt"
-    sheet.save(os.path.join(OUT_DIR, png_name))
+    sheet.save(os.path.join(directory, png_name))
 
     lines = []
     lines.append(
@@ -126,17 +149,30 @@ def build_font(name, size, chars):
                 xadvance=g["xadvance"],
             )
         )
-    with open(os.path.join(OUT_DIR, fnt_name), "w") as f:
+    with open(os.path.join(directory, fnt_name), "w") as f:
         f.write("\n".join(lines) + "\n")
 
-    png_bytes = os.path.getsize(os.path.join(OUT_DIR, png_name))
-    print(f"{name}: {len(glyphs)} glyphs, sheet {sheet_w}x{sheet_h}, {png_bytes} bytes png")
+    png_bytes = os.path.getsize(os.path.join(directory, png_name))
+    print(f"  {name}: size {size}, {len(glyphs)} glyphs, sheet {sheet_w}x{sheet_h}, {png_bytes} bytes png")
+
+
+def write_fonts_xml(directory):
+    lines = ['<?xml version="1.0" encoding="UTF-8"?>', "<resources>", "  <fonts>"]
+    for name, resource_id, _, _ in FONTS:
+        lines.append(f'    <font id="{resource_id}" filename="{name}.fnt"/>')
+    lines += ["  </fonts>", "</resources>"]
+    with open(os.path.join(directory, "fonts.xml"), "w") as f:
+        f.write("\n".join(lines) + "\n")
 
 
 def main():
-    os.makedirs(OUT_DIR, exist_ok=True)
-    for name, size, chars in FONTS:
-        build_font(name, size, chars)
+    for px in RESOLUTIONS:
+        directory = out_dir(px)
+        os.makedirs(directory, exist_ok=True)
+        print(f"{px}x{px}: {os.path.relpath(directory, ROOT)}")
+        for name, _, v1_size, chars in FONTS:
+            build_font(directory, name, scaled_size(v1_size, px), chars)
+        write_fonts_xml(directory)
 
 
 if __name__ == "__main__":

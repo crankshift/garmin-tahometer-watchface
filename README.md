@@ -8,7 +8,7 @@ A Garmin Connect IQ watch face that reads like a car instrument cluster. The min
 
 <p align="center"><sub>10:06, shown at 3× in the <a href="prototype/index.html">HTML prototype</a>. On the watch the numerals are Barlow Condensed, so the digits look slightly different.</sub></p>
 
-Built for the fenix 7 Pro (47mm, 260×260 round MIP display). The same build also targets the other watches with a 260×260 round MIP screen: fenix 6, fenix 6 Pro, fenix 7, the fenix 7 Pro without Wi-Fi, fenix 8 Solar 47mm, fenix 9 Pro Solar 47mm, Forerunner 255, 255 Music and 955, vívoactive 4, and the Legacy First Avenger and Darth Vader editions. `manifest.xml` has the device ids. All geometry derives from the screen radius, so adding other round MIP devices should be cheap.
+Built for the fenix 7 Pro (47mm, 260×260 round MIP display). The same build also targets the other watches with a 260×260 round MIP screen: fenix 6, fenix 6 Pro, fenix 7, the fenix 7 Pro without Wi-Fi, fenix 8 Solar 47mm, fenix 9 Pro Solar 47mm, Forerunner 255, 255 Music and 955, vívoactive 4, and the Legacy First Avenger and Darth Vader editions. `manifest.xml` has the device ids. All geometry scales with the screen radius, and the bitmap fonts are generated for every screen size from 240 to 466 px, so adding other round devices is cheap.
 
 ## Status
 
@@ -76,19 +76,20 @@ The app id in `manifest.xml` is fine for sideloading. If you publish your own bu
 ## Project layout
 
 ```
-source/        Monkey C code, one module per part of the face (Tachometer.mc, Gear.mc, ...)
-               Unit tests sit next to their module (*Test.mc)
-resources/     Settings, strings, drawables and the generated bitmap fonts
-assets/fonts/  Source TTF for the bitmap fonts
-tools/         gen_bitmap_font.py, which regenerates resources/fonts from assets/fonts
-prototype/     HTML prototype of the face, used as the geometry reference for the port
-docs/          Design notes and the implementation tickets
+source/             Monkey C code, one module per part of the face (Tachometer.mc, Gear.mc, ...)
+                    Unit tests sit next to their module (*Test.mc)
+resources/          Settings, strings, drawables and the generated bitmap fonts (the 260 px set)
+resources-round-*/  The bitmap fonts for the other screen sizes, picked by the build per watch
+assets/fonts/       Source TTF for the bitmap fonts
+tools/              gen_bitmap_font.py, which regenerates every font set from assets/fonts
+prototype/          HTML prototype of the face, used as the geometry reference for the port
+docs/               Design notes and the implementation tickets
 ```
 
-To regenerate the bitmap fonts after changing sizes or glyphs, install Pillow (`pip install Pillow`) and run `tools/gen_bitmap_font.py`.
+To regenerate the bitmap fonts after changing sizes or glyphs, install Pillow (`pip install Pillow`) and run `tools/gen_bitmap_font.py`. It writes one set per screen size: the 260 px set to `resources/fonts/`, and the others to `resources-round-WxH/fonts/`.
 
 ## License
 
 The code is under the [MIT License](LICENSE).
 
-The numeral font is [Barlow Condensed](https://github.com/jpt/barlow) Bold, under the [SIL Open Font License 1.1](assets/fonts/OFL.txt). The OFL also covers the bitmap fonts in `resources/fonts/`, which are generated from it.
+The numeral font is [Barlow Condensed](https://github.com/jpt/barlow) Bold, under the [SIL Open Font License 1.1](assets/fonts/OFL.txt). The OFL also covers the bitmap fonts in `resources/fonts/` and `resources-round-*/fonts/`, which are generated from it.

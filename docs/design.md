@@ -15,7 +15,7 @@ Agreed on 2026-09-23 in a design grilling session. The vocabulary lives in [`CON
 - Numerals 0 to 6 with no unit label.
 - Ticks every 10 minutes (major, numbered), every 5 minutes (mid) and every minute (minor).
 - The Redline covers minutes 50 to 60 in red.
-- Rings from the rim inward: Sweep band (about 8 px), ticks, numerals, Rev Bar (about 3 px).
+- Rings from the rim inward: Sweep band (about 8 px), ticks, numerals, Rev Bar (about 3 px). Pixel sizes in this file are for the 260 px screen; other screens scale them in proportion ([multi-device spec](specs/multi-device.md), "Scaling").
 
 ## Minute Style
 
@@ -61,7 +61,7 @@ Agreed on 2026-09-23 in a design grilling session. The vocabulary lives in [`CON
 ## Look
 
 - Black background, white ticks and numerals, red Redline, amber Minute Style.
-- Numeral font for the Gear and the Tachometer: condensed DIN style, shipped to the watch as a custom bitmap font. A 7-segment font was tried and rejected because `1` becomes two thin bars and hours like `11` read poorly.
+- Numeral font for the Gear and the Tachometer: condensed DIN style, shipped to the watch as a custom bitmap font. A 7-segment font was tried and rejected because `1` becomes two thin bars and hours like `11` read poorly. Bitmap fonts don't scale, so `tools/gen_bitmap_font.py` generates a set per screen size.
 
 ## Settings
 

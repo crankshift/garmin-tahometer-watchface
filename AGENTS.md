@@ -6,6 +6,7 @@ A Garmin Connect IQ watch face in Monkey C for the fenix 7 Pro (`fenix7pro`, 260
 
 - Name things with the `CONTEXT.md` glossary. Each term gets its own source module (`Tachometer.mc`, `Gear.mc`, `RevBar.mc`, ...).
 - Unit tests are `(:test)` functions in `<Module>Test.mc`, next to the module they cover. Pure logic gets a unit test; drawing is checked in the simulator.
+- Every fixed pixel value is written for the 260 px screen and scaled by the screen radius (`docs/specs/multi-device.md`, "Scaling"). Put it in the module's `Layout` class, which `onLayout` rebuilds through the module's `fit`, or multiply by `Screen.scale` where a module has no layout (`Icons.mc`). Don't add a bare pixel constant.
 - Colors come from the 64-color MIP palette listed under "Shared facts" in `docs/tickets/README.md`. The watch face memory limit is 128 KB on the fenix 7 Pro and differs per watch (112 KB on the fenix 6 and 6 Pro); the table in `docs/specs/multi-device.md` has each group.
 - On the maintainer's machine the developer key is `~/.garmin/tachometer-watchface/developer_key.der`, and `monkeyc` needs `JAVA_HOME=/opt/homebrew/opt/openjdk`.
 
