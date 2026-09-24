@@ -1,12 +1,12 @@
 # Design: Tachometer Watch Face (v1)
 
-Agreed on 2026-09-23 in a design grilling session. The vocabulary lives in [`CONTEXT.md`](../CONTEXT.md). This file records the decisions. The throwaway HTML prototype that rendered them is [`prototype/index.html`](../prototype/index.html) (`open prototype/index.html`). It stays on main as the geometry reference for the port and is deleted once the port is done (ticket 09).
+Agreed on 2026-09-23 in a design grilling session. The vocabulary lives in [`CONTEXT.md`](../CONTEXT.md). This file records the decisions. The throwaway HTML prototype that rendered them is [`prototype/index.html`](../prototype/index.html) (`open prototype/index.html`). It stays on main as the geometry reference, the source of the high-resolution face renders, and the layout check for other screen sizes.
 
 ## Target
 
 - Garmin fenix 7 Pro Sapphire Solar, 47mm (device id `fenix7pro`): 260×260 round MIP display, 64 colors, Connect IQ API 5.2.
-- Personal sideload. A Connect IQ Store release is out of scope for now.
-- All geometry derives from the screen radius, so other round MIP devices (for example the fenix 7X Pro at 280×280) are cheap to add later.
+- Personal sideload first, plus a private Connect IQ Store beta, because the phone-app settings only appear for Store installs. A public Store release comes after multi-device support.
+- More watches (round MIP at 240 to 280 px, and round AMOLED at 360 to 466 px) are specified in [`docs/specs/multi-device.md`](specs/multi-device.md).
 
 ## Tachometer
 
@@ -71,7 +71,6 @@ Seven settings in v1, edited in the Garmin Connect phone app: Minute Style, one 
 - An accent color setting.
 - Tapping a Slot to open the matching widget (touch through the Complications API).
 - An on-watch settings menu.
-- A Connect IQ Store release.
 
 ## Next
 

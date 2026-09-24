@@ -12,7 +12,7 @@ Built for the fenix 7 Pro (47mm, 260×260 round MIP display). All geometry deriv
 
 ## Status
 
-The face runs in the Connect IQ simulator and its unit tests pass. It has not been checked on a real watch yet ([ticket 09](docs/tickets/09-on-watch-check.md)). It isn't in the Connect IQ Store, so to use it you build it and sideload it yourself.
+The face runs on a real fenix 7 Pro, and its unit tests pass. Support for more round watches, MIP and AMOLED, is in progress ([spec](docs/specs/multi-device.md)). It isn't in the Connect IQ Store yet, so to use it you build it and sideload it yourself.
 
 ## The face
 

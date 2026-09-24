@@ -1,6 +1,6 @@
 # Tachometer Watch Face
 
-A Garmin Connect IQ watch face in Monkey C for the fenix 7 Pro (`fenix7pro`, 260×260 round MIP display, 64 colors). `README.md` covers building, testing and sideloading. `docs/design.md` is the v1 spec, and it wins over `prototype/index.html` when they disagree.
+A Garmin Connect IQ watch face in Monkey C for the fenix 7 Pro (`fenix7pro`, 260×260 round MIP display, 64 colors). `README.md` covers building, testing and sideloading. `docs/design.md` is the v1 spec, and `docs/specs/multi-device.md` adds more watches. Both win over `prototype/index.html` when they disagree.
 
 ## Working here
 
@@ -13,7 +13,7 @@ A Garmin Connect IQ watch face in Monkey C for the fenix 7 Pro (`fenix7pro`, 260
 
 - A `settingConfig type="list"` only works on a `number` property. List settings store `0`, `1`, `2`, ... and the code compares them with `==`.
 - The `filename` in a resource XML resolves relative to that XML file's own directory, not to `resources/`.
-- An agent session can't drive the simulator's Simulation menu (setting the time, battery level or low-power mode). Verify those scenarios with a clean build and the unit tests. `screencapture` has grabbed unrelated windows from the user's screen, so ask before taking a screenshot.
+- An agent session can't drive the simulator's Simulation menu (setting the time, battery level or low-power mode). Verify those scenarios with a clean build and the unit tests. `screencapture` has grabbed unrelated windows from the user's screen, so ask before taking a screenshot. For the multi-device tickets (10 to 13) the maintainer has allowed screenshots of the simulator window only, taken with `screencapture -l <window id>`. The maintainer opens the memory view and switches low-power mode on when a check needs it.
 
 ## Agent skills
 

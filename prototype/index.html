@@ -733,8 +733,8 @@ function hardenEdges(ctx, px) {
 }
 
 // Garmin's AMOLED always-on limit: at most 10% of the screen lit, or the always-on face goes black.
-// Any non-black pixel counts as lit here. API 5.0+ watches reportedly measure brightness instead,
-// which is looser, so this count is the stricter check.
+// Any non-black pixel counts as lit here. Since Connect IQ 7, watches reportedly measure overall
+// brightness instead, which is looser, so this count is the stricter check.
 function measureAod(ctx, px) {
   const d = ctx.getImageData(0, 0, px, px).data;
   let lit = 0;

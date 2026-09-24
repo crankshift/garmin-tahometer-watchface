@@ -24,9 +24,20 @@ The throwaway HTML prototype is [`prototype/index.html`](../../prototype/index.h
 | 08 | [Remaining Readouts](08-remaining-readouts.md) | 07 |
 | 09 | [On-watch check](09-on-watch-check.md) | all |
 
+### Multi-device
+
+Specified in [`docs/specs/multi-device.md`](../specs/multi-device.md). All four tickets are worked on one branch, `multi-device`, which merges into `main` when they're done. The version then goes to 1.1.0 for the next Connect IQ Store beta. Check each new screen size in the prototype's Screen picker before running the simulator.
+
+| # | Ticket | Depends on |
+|---|--------|------------|
+| 10 | [260×260 MIP watches](10-260-mip-watches.md) | none |
+| 11 | [Proportional geometry and per-resolution fonts](11-proportional-geometry.md) | none |
+| 12 | [240 and 280 MIP watches](12-240-280-mip-watches.md) | 11 |
+| 13 | [AMOLED watches](13-amoled-watches.md) | 11 |
+
 ## Shared facts
 
-- Target: fenix 7 Pro Sapphire Solar 47mm, device id `fenix7pro`, 260×260 round MIP display, 64 colors, Connect IQ API 5.2.
+- v1 target: fenix 7 Pro Sapphire Solar 47mm, device id `fenix7pro`, 260×260 round MIP display, 64 colors, Connect IQ API 5.2. Tickets 10 to 13 add more watches (see the multi-device spec).
 - Geometry below uses `R = 130` (screen radius) and center `(CX, CY) = (130, 130)`. Angles are Garmin degrees: counter-clockwise from 3 o'clock, as `Dc.drawArc` expects.
 - Minute or second to angle: `deg = 180 - 3 * value`. So 0 sits at 9 o'clock, 30 at 12 o'clock and 60 at 3 o'clock.
 - Colors: white `0xFFFFFF`, light grey `0xAAAAAA`, dark grey `0x555555`, red `0xFF0000`, amber `0xFFAA00` (`COLOR_YELLOW`), unlit Redline `0x550000`, green `0x00FF00`, blue `0x00AAFF`.
