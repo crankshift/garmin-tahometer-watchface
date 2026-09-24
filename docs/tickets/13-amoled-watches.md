@@ -1,6 +1,6 @@
 # 13: AMOLED watches
 
-Status: partial: peak memory on `fr965`, and the real low-power switch on `fr265s` and `fr965`, wait for the maintainer
+Status: partial: the real low-power switch on `fr265s` and `fr965` waits for the maintainer
 Depends on: 11
 Spec: [`docs/specs/multi-device.md`](../specs/multi-device.md), "AMOLED, awake" and "AMOLED, always-on"
 Prototype reference: the AMOLED extras panel; `redlineGradient`, `glowStroke`, `drawGlow`, `drawAod`, `drawAodFuelGauge`, `measureAod`
@@ -52,7 +52,7 @@ The face runs on the 48 in-scope AMOLED watches. When awake it shows the five AM
 - [x] The 48 ids are in the manifest, and `monkeyc -e` builds all 91 products.
 - [x] All five extras show on `fr265s` and `fr965` when awake, and nothing changes on MIP watches.
 - [ ] The always-on view on `fr265s` and `fr965` matches the spec, and its lit-pixel share is recorded here, under 10%. Drawn and measured on a throwaway build that starts asleep (see Results); the real low-power switch is still to check.
-- [ ] Peak memory on `fr965` is recorded here, under 85% of 128 KB. The footer reads 28.2 kB of 123.8 kB; the memory view's Peak Memory line is still to read.
+- [x] Peak memory on `fr965` is recorded here, under 85% of 128 KB.
 - [x] The setting reads "Always-on Rev Bar (MIP only)".
 - [x] The README, `AGENTS.md` and `docs/design.md` are updated.
 
@@ -74,7 +74,7 @@ Started on 2026-09-24.
 
   With a 12-hour clock showing 10 PM (AM/PM drawn) they are 7.7% and 7.1%, and 6.1% and 5.9% half-lit, so AM/PM doesn't change the picture. The simulator draws the display at 2× with smoothing, so the first column counts the fringe around every edge, and is an upper bound. The simulator also adds a faint grid of value-1 pixels, which the 8/255 cut-off skips. Both columns are under 10%.
 - **Launcher icon.** The 40×40 icon scaled up to 54–70 px came out soft and jagged, so the AMOLED resolutions use a 70×70 one (`tools/gen_launcher_icon.py`, `resources/drawables/launcher_icon_70.png`, chosen by `resources-round-*/drawables/drawables.xml`). Most AMOLED watches want 54 to 65 px, so the build still warns that it scales the icon, now down.
-- **Peak memory on `fr965`.** Not read yet. The simulator's footer shows 28.2 kB of 123.8 kB (23%) on both the awake face and the always-on view. On `fenix7pro` the footer went from 23.6 kB before this ticket to 27.5 kB.
+- **Peak memory on `fr965`.** The "Peak Memory" line of the simulator's Active Memory window (File > View Memory), read from a screenshot of that window with the awake face running: **30.0 kB** of the 123.8 kB limit, 24%, far under 85%. The window lists 15,163 bytes of code and 3,367 bytes of data. The fonts don't count: on API 4.0+ they load into the graphics pool, which is separate from the app's memory. On `fenix7pro` the footer went from 23.6 kB before this ticket to 27.5 kB.
 
 ## Decisions
 
