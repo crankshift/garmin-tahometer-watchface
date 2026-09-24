@@ -38,6 +38,21 @@ function testBatteryTextRoundsAndAppendsPercent(logger as Test.Logger) as Boolea
     return Readouts.batteryText(76.4).equals("76%") && Readouts.batteryText(76.6).equals("77%");
 }
 
+// The watch reports Body Battery as a Float; shown raw it read "85.000000".
+(:test)
+function testBodyBatteryLevelRoundsFloatToWholeNumber(logger as Test.Logger) as Boolean {
+    return Readouts.formatOrDash(Readouts.bodyBatteryLevel(85.0)).equals("85")
+        && Readouts.bodyBatteryLevel(84.6) == 85
+        && Readouts.bodyBatteryLevel(84.4) == 84
+        && Readouts.bodyBatteryLevel(0.0) == 0
+        && Readouts.bodyBatteryLevel(100.0) == 100;
+}
+
+(:test)
+function testBodyBatteryLevelKeepsMissingDataNull(logger as Test.Logger) as Boolean {
+    return Readouts.bodyBatteryLevel(null) == null;
+}
+
 (:test)
 function testEmptyReadoutIsNull(logger as Test.Logger) as Boolean {
     return Readouts.get(Readouts.EMPTY) == null;

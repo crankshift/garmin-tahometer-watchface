@@ -234,16 +234,25 @@ module Readouts {
         );
     }
 
+    // Pure: a Body Battery sample is a Float (85.0), and a Float's toString prints "85.000000",
+    // which the numeral fonts can't draw. Round it to a whole Number. Missing data stays null.
+    function bodyBatteryLevel(data as Numeric?) as Number? {
+        if (data == null) {
+            return null;
+        }
+        return Math.round(data).toNumber();
+    }
+
     function latestBodyBatteryLevel() as Number? {
         if (!(Toybox has :SensorHistory) || !(Toybox.SensorHistory has :getBodyBatteryHistory)) {
             return null;
         }
         var iterator = SensorHistory.getBodyBatteryHistory({ :period => 1, :order => SensorHistory.ORDER_NEWEST_FIRST });
         var sample = iterator.next();
-        if (sample == null || sample.data == null) {
+        if (sample == null) {
             return null;
         }
-        return sample.data as Number;
+        return bodyBatteryLevel(sample.data);
     }
 
     function sunNoData() as ReadoutContent {
