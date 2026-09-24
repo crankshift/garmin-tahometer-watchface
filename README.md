@@ -8,7 +8,15 @@ A Garmin Connect IQ watch face that reads like a car instrument cluster. The min
 
 <p align="center"><sub>10:06, shown at 3× in the <a href="prototype/index.html">HTML prototype</a>. On the watch the numerals are Barlow Condensed, so the digits look slightly different.</sub></p>
 
-Built for the fenix 7 Pro (47mm, 260×260 round MIP display). The same build also targets the other watches with a 260×260 round MIP screen: fenix 6, fenix 6 Pro, fenix 7, the fenix 7 Pro without Wi-Fi, fenix 8 Solar 47mm, fenix 9 Pro Solar 47mm, Forerunner 255, 255 Music and 955, vívoactive 4, and the Legacy First Avenger and Darth Vader editions. `manifest.xml` has the device ids. All geometry scales with the screen radius, and the bitmap fonts are generated for every screen size from 240 to 466 px, so adding other round devices is cheap.
+Built for the fenix 7 Pro (47mm, 260×260 round MIP display). The same build also targets the other watches with a round MIP screen of 240, 260 or 280 px:
+
+- **260×260**: fenix 6, fenix 6 Pro, fenix 7, the fenix 7 Pro without Wi-Fi, fenix 8 Solar 47mm, fenix 9 Pro Solar 47mm, Forerunner 255, 255 Music and 955, vívoactive 4, and the Legacy First Avenger and Darth Vader editions.
+- **240×240**: Descent Mk2 S, fenix 5 Plus, 5S Plus and 5X Plus, fenix 6S and 6S Pro, fenix 7S and 7S Pro, Forerunner 245, 245 Music, 745, 945 and 945 LTE, and the MARQ Adventurer, Athlete, Aviator, Captain, Commander, Driver, Expedition and Golfer.
+- **280×280**: Descent Mk2, Enduro, Enduro 3, fenix 6X Pro, fenix 7X, fenix 7X Pro (with and without Wi-Fi), fenix 8 Solar 51mm and fenix 9 Pro Solar 51mm.
+
+`manifest.xml` has the device ids. The fenix 5 Plus watches need firmware with Connect IQ 3.3 or newer, and the build skips the older firmware.
+
+All geometry scales with the screen radius, and the bitmap fonts are generated for every screen size from 240 to 466 px, so adding other round devices is cheap.
 
 ## Status
 

@@ -35,6 +35,8 @@ Left out:
 
 Instinct 3 AMOLED and Instinct Crossover AMOLED are in. The SDK lists them as plain round 390 and 416 px screens.
 
+The fenix 5 Plus, 5S Plus and 5X Plus are in, but only on firmware with Connect IQ 3.3 or newer. Their profiles also list an older firmware (3.2.8), and the package tool skips that part number with a warning. The id list doesn't change.
+
 **Memory rule.** If a device group's peak memory in the simulator goes over 85% of its watch face limit, drop that group, or make its fonts smaller. On API 3.x watches the code and data compile to about 17 KB, against about 12 KB on API 5 (`monkeyc --build-stats 0`), because API 3.x uses older bytecode.
 
 ## Scaling

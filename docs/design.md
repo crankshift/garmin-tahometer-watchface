@@ -6,6 +6,8 @@ Agreed on 2026-09-23 in a design grilling session. The vocabulary lives in [`CON
 
 - Garmin fenix 7 Pro Sapphire Solar, 47mm (device id `fenix7pro`): 260×260 round MIP display, 64 colors, Connect IQ API 5.2.
 - Twelve more watches share that screen, so the face needs no layout change on them: `fenix6`, `fenix6pro`, `fenix7`, `fenix7pronowifi`, `fenix8solar47mm`, `fenix9prosolar47mm`, `fr255`, `fr255m`, `fr955`, `legacyherofirstavenger`, `legacysagadarthvader` and `vivoactive4`.
+- Twenty-one watches have a 240×240 round MIP screen: `descentmk2s`, `fenix5plus`, `fenix5splus`, `fenix5xplus`, `fenix6s`, `fenix6spro`, `fenix7s`, `fenix7spro`, `fr245`, `fr245m`, `fr745`, `fr945`, `fr945lte`, `marqadventurer`, `marqathlete`, `marqaviator`, `marqcaptain`, `marqcommander`, `marqdriver`, `marqexpedition` and `marqgolfer`.
+- Nine watches have a 280×280 round MIP screen: `descentmk2`, `enduro`, `enduro3`, `fenix6xpro`, `fenix7x`, `fenix7xpro`, `fenix7xpronowifi`, `fenix8solar51mm` and `fenix9prosolar51mm`. The face scales to the 240 and 280 px screens in proportion ([multi-device spec](specs/multi-device.md), "Scaling").
 - Personal sideload first, plus a private Connect IQ Store beta, because the phone-app settings only appear for Store installs. A public Store release comes after multi-device support.
 - More watches (round MIP at 240 to 280 px, and round AMOLED at 360 to 466 px) are specified in [`docs/specs/multi-device.md`](specs/multi-device.md).
 
