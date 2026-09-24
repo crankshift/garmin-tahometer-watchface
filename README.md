@@ -8,7 +8,7 @@ A Garmin Connect IQ watch face that reads like a car instrument cluster. The min
 
 <p align="center"><sub>10:06, shown at 3× in the <a href="prototype/index.html">HTML prototype</a>. On the watch the numerals are Barlow Condensed, so the digits look slightly different.</sub></p>
 
-Built for the fenix 7 Pro (47mm, 260×260 round MIP display). All geometry derives from the screen radius, so adding other round MIP devices should be cheap.
+Built for the fenix 7 Pro (47mm, 260×260 round MIP display). The same build also targets the other watches with a 260×260 round MIP screen: fenix 6, fenix 6 Pro, fenix 7, the fenix 7 Pro without Wi-Fi, fenix 8 Solar 47mm, fenix 9 Pro Solar 47mm, Forerunner 255, 255 Music and 955, vívoactive 4, and the Legacy First Avenger and Darth Vader editions. `manifest.xml` has the device ids. All geometry derives from the screen radius, so adding other round MIP devices should be cheap.
 
 ## Status
 

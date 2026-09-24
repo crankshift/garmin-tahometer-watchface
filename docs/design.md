@@ -5,6 +5,7 @@ Agreed on 2026-09-23 in a design grilling session. The vocabulary lives in [`CON
 ## Target
 
 - Garmin fenix 7 Pro Sapphire Solar, 47mm (device id `fenix7pro`): 260×260 round MIP display, 64 colors, Connect IQ API 5.2.
+- Twelve more watches share that screen, so the face needs no layout change on them: `fenix6`, `fenix6pro`, `fenix7`, `fenix7pronowifi`, `fenix8solar47mm`, `fenix9prosolar47mm`, `fr255`, `fr255m`, `fr955`, `legacyherofirstavenger`, `legacysagadarthvader` and `vivoactive4`.
 - Personal sideload first, plus a private Connect IQ Store beta, because the phone-app settings only appear for Store installs. A public Store release comes after multi-device support.
 - More watches (round MIP at 240 to 280 px, and round AMOLED at 360 to 466 px) are specified in [`docs/specs/multi-device.md`](specs/multi-device.md).
 

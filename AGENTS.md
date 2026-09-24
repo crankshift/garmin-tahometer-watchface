@@ -1,12 +1,12 @@
 # Tachometer Watch Face
 
-A Garmin Connect IQ watch face in Monkey C for the fenix 7 Pro (`fenix7pro`, 260×260 round MIP display, 64 colors). `README.md` covers building, testing and sideloading. `docs/design.md` is the v1 spec, and `docs/specs/multi-device.md` adds more watches. Both win over `prototype/index.html` when they disagree.
+A Garmin Connect IQ watch face in Monkey C for the fenix 7 Pro (`fenix7pro`, 260×260 round MIP display, 64 colors) and the 12 other watches with the same screen listed in `manifest.xml`. `README.md` covers building, testing and sideloading. `docs/design.md` is the v1 spec, and `docs/specs/multi-device.md` adds more watches. Both win over `prototype/index.html` when they disagree.
 
 ## Working here
 
 - Name things with the `CONTEXT.md` glossary. Each term gets its own source module (`Tachometer.mc`, `Gear.mc`, `RevBar.mc`, ...).
 - Unit tests are `(:test)` functions in `<Module>Test.mc`, next to the module they cover. Pure logic gets a unit test; drawing is checked in the simulator.
-- Colors come from the 64-color MIP palette listed under "Shared facts" in `docs/tickets/README.md`. The watch face memory limit is 128 KB.
+- Colors come from the 64-color MIP palette listed under "Shared facts" in `docs/tickets/README.md`. The watch face memory limit is 128 KB on the fenix 7 Pro and differs per watch (112 KB on the fenix 6 and 6 Pro); the table in `docs/specs/multi-device.md` has each group.
 - On the maintainer's machine the developer key is `~/.garmin/tachometer-watchface/developer_key.der`, and `monkeyc` needs `JAVA_HOME=/opt/homebrew/opt/openjdk`.
 
 ## Connect IQ gotchas
