@@ -1,0 +1,14 @@
+info face="Barlow Condensed Bold" size=123 bold=1 italic=0 charset="" unicode=1 stretchH=100 smooth=1 aa=1 padding=0,0,0,0 spacing=1,1 outline=0
+common lineHeight=212 base=155 scaleW=738 scaleH=118 pages=1 packed=0 alphaChnl=1 redChnl=0 greenChnl=0 blueChnl=0
+page id=0 file="gear_glow.png"
+chars count=10
+char id=48   x=2    y=2   width=76  height=112  xoffset=1  yoffset=56  xadvance=78  page=0  chnl=15
+char id=49   x=80    y=2   width=53  height=110  xoffset=2  yoffset=56  xadvance=57  page=0  chnl=15
+char id=50   x=135    y=2   width=71  height=113  xoffset=3  yoffset=56  xadvance=76  page=0  chnl=15
+char id=51   x=208    y=2   width=71  height=113  xoffset=3  yoffset=55  xadvance=76  page=0  chnl=15
+char id=52   x=281    y=2   width=80  height=108  xoffset=1  yoffset=58  xadvance=82  page=0  chnl=15
+char id=53   x=363    y=2   width=74  height=114  xoffset=1  yoffset=55  xadvance=76  page=0  chnl=15
+char id=54   x=439    y=2   width=74  height=113  xoffset=1  yoffset=56  xadvance=76  page=0  chnl=15
+char id=55   x=515    y=2   width=71  height=111  xoffset=1  yoffset=55  xadvance=72  page=0  chnl=15
+char id=56   x=588    y=2   width=72  height=112  xoffset=2  yoffset=56  xadvance=76  page=0  chnl=15
+char id=57   x=662    y=2   width=74  height=112  xoffset=0  yoffset=56  xadvance=76  page=0  chnl=15

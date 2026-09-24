@@ -12,6 +12,6 @@ module Geometry {
     // Polar to cartesian around the face center.
     function polar(deg as Float, r as Float) as Array<Float> {
         var rad = Math.toRadians(deg);
-        return [Constants.CX + r * Math.cos(rad), Constants.CY - r * Math.sin(rad)] as Array<Float>;
+        return [Screen.cx + r * Math.cos(rad), Screen.cy - r * Math.sin(rad)] as Array<Float>;
     }
 }

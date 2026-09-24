@@ -5,5 +5,7 @@
     <font id="TachometerNumeralFont" filename="tachometer_numeral.fnt"/>
     <font id="SlotValueFont" filename="slot_value.fnt"/>
     <font id="SmallFont" filename="small.fnt"/>
+    <font id="GearGlowFont" filename="gear_glow.fnt"/>
+    <font id="GearOutlineFont" filename="gear_outline.fnt"/>
   </fonts>
 </resources>

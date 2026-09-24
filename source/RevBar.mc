@@ -4,8 +4,32 @@ import Toybox.Graphics;
 // Ported from prototype/index.html's drawRevBar. One arc segment per second; onUpdate draws
 // all elapsed segments at once (awake), onPartialUpdate draws only the newest one (low power).
 module RevBar {
-    const R_REV = Constants.R - 50;
-    const PEN_WIDTH = 3;
+    // Written for the 260 px screen and scaled by the screen's radius, once, in fit, so the
+    // once-a-second onPartialUpdate only reads fields.
+    class Layout {
+        var rRev as Float;
+        var penWidth as Number;
+
+        function initialize(radius as Float) {
+            var s = Screen.scaleFor(radius);
+            rRev = radius - 50 * s;
+            penWidth = Screen.penWidth(3, s);
+        }
+    }
+
+    // Starts as the 260 px layout; the view calls fit from onLayout.
+    var layout as Layout = new Layout(Screen.V1_RADIUS);
+
+    function fit(radius as Float) as Void {
+        layout = new Layout(radius);
+    }
+
+    // Pure: true while the Rev Bar should be running: whenever the watch is awake, and asleep only
+    // on a MIP watch with the "Always-on Rev Bar" setting on and the power budget not exceeded.
+    // AMOLED watches never get partial updates, so the setting has no effect on them.
+    function isVisible(awake as Boolean, amoled as Boolean, alwaysOnSetting as Boolean, budgetExceeded as Boolean) as Boolean {
+        return awake || (!amoled && alwaysOnSetting && !budgetExceeded);
+    }
 
     // Pure: red for the last 10 seconds, white otherwise.
     function segmentColor(second as Number) as Graphics.ColorType {
@@ -17,9 +41,9 @@ module RevBar {
     function segmentClipBounds(second as Number) as Array<Number> {
         var startDeg = Geometry.minuteDeg(second) - 0.6;
         var endDeg = Geometry.minuteDeg(second + 1) + 0.6;
-        var p1 = Geometry.polar(startDeg, R_REV);
-        var p2 = Geometry.polar(endDeg, R_REV);
-        var pad = PEN_WIDTH / 2.0 + 1;
+        var p1 = Geometry.polar(startDeg, layout.rRev);
+        var p2 = Geometry.polar(endDeg, layout.rRev);
+        var pad = layout.penWidth / 2.0 + 1;
         var minX = (p1[0] < p2[0] ? p1[0] : p2[0]) - pad;
         var maxX = (p1[0] > p2[0] ? p1[0] : p2[0]) + pad;
         var minY = (p1[1] < p2[1] ? p1[1] : p2[1]) - pad;
@@ -34,11 +58,11 @@ module RevBar {
 
     function drawSegment(dc as Graphics.Dc, second as Number) as Void {
         dc.setColor(segmentColor(second), Graphics.COLOR_TRANSPARENT);
-        dc.setPenWidth(PEN_WIDTH);
+        dc.setPenWidth(layout.penWidth);
         dc.drawArc(
-            Constants.CX,
-            Constants.CY,
-            R_REV,
+            Screen.cx,
+            Screen.cy,
+            layout.rRev,
             Graphics.ARC_CLOCKWISE,
             Geometry.minuteDeg(second) - 0.6,
             Geometry.minuteDeg(second + 1) + 0.6
@@ -59,5 +83,15 @@ module RevBar {
         dc.setClip(bounds[0], bounds[1], bounds[2], bounds[3]);
         drawSegment(dc, second);
         dc.clearClip();
+    }
+
+    // AMOLED only, drawn before the face so the face sits on top: a glow around the lit Rev Bar,
+    // white, and red past second 50.
+    function drawGlow(dc as Graphics.Dc, second as Number) as Void {
+        var whiteEnd = second + 1 < 50 ? second + 1 : 50;
+        Glow.drawArc(dc, layout.rRev, Geometry.minuteDeg(0), Geometry.minuteDeg(whiteEnd), layout.penWidth, Graphics.COLOR_WHITE);
+        if (second >= 50) {
+            Glow.drawArc(dc, layout.rRev, Geometry.minuteDeg(50), Geometry.minuteDeg(second + 1), layout.penWidth, Graphics.COLOR_RED);
+        }
     }
 }

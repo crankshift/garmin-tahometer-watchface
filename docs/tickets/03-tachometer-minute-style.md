@@ -1,6 +1,6 @@
 # 03: Tachometer and Minute Style
 
-Status: partial: implemented and ported line-by-line from the prototype; can't verify in the simulator until the SDK is installed (see ticket 01)
+Status: done: confirmed working on the real fenix 7 Pro on 2026-09-24, which covers the checks this ticket couldn't do in the simulator. Before that it was partial: implemented and ported line-by-line from the prototype; can't verify in the simulator until the SDK is installed (see ticket 01)
 Depends on: 01, 02
 Prototype reference: `drawTachometer`, `drawNeedle`
 
