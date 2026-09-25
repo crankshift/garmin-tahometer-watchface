@@ -94,7 +94,7 @@ Connect the watch over USB and copy `bin/tachometer.prg` into `GARMIN/APPS`. On 
 
 `manifest.xml` keeps beta app id `F0E8E679-D907-40F3-9A19-6397A3BECF60`. Do not change it: Garmin's Beta Apps section associates that id with the beta listing.
 
-Use the export script to build a package for either listing. The production manifest is generated under `bin/`, so source manifest never changes.
+Use the export script to build a package for either listing. The production manifest is generated as `manifest-prod.xml` next to `manifest.xml` (git-ignored), so the source manifest never changes. It has to sit there: the compiler looks for the `resources-round-*` folders next to the manifest.
 
 ```sh
 # Beta Apps listing

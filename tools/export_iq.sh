@@ -6,8 +6,10 @@
 #   prod  builds the same manifest with the prod app id, for publishing. The Beta Apps section
 #         ties a beta app to its id, so the published app needs a different one.
 #
-# The prod manifest is generated from manifest.xml into bin/manifest-prod.xml, so the two never
-# differ in anything but the app id. monkey-prod.jungle points the build at it.
+# The prod manifest is generated from manifest.xml into manifest-prod.xml (git-ignored), so the two
+# never differ in anything but the app id. monkey-prod.jungle points the build at it. It must sit next
+# to manifest.xml: the compiler looks for the resources-round-* folders in the manifest's directory,
+# and with the manifest in bin/ every prod package silently shipped the 260 px base resources only.
 #
 # Usage: tools/export_iq.sh beta|prod
 # Needs monkeyc on PATH and a Java runtime (JAVA_HOME). The developer key defaults to
@@ -42,8 +44,7 @@ case ${1:-} in
       echo "export_iq: manifest.xml already has the prod app id; it must keep the beta one" >&2
       exit 1
     fi
-    mkdir -p bin
-    sed "s/id=\"$beta_id\"/id=\"$PROD_ID\"/" manifest.xml > bin/manifest-prod.xml
+    sed "s/id=\"$beta_id\"/id=\"$PROD_ID\"/" manifest.xml > manifest-prod.xml
     jungle=monkey-prod.jungle
     ;;
   *)
