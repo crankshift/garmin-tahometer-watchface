@@ -27,6 +27,10 @@ ways, at their five resolutions (360 to 466 px):
 - The code refers to both new fonts by resource id on every watch, so resources/fonts/ also holds a tiny
   stand-in for each. The MIP watches never load them, and an AMOLED resolution's own set replaces them.
 
+Barlow Condensed has no Cyrillic, so the small font's Cyrillic letters (the Ukrainian and Russian weekdays)
+come from Roboto Condensed Bold instead, scaled so its capitals are as tall as Barlow's and set on Barlow's
+baseline. No word mixes the two, since each weekday is all Latin or all Cyrillic.
+
 Usage: tools/gen_bitmap_font.py
 Requires: Pillow (pip install Pillow).
 """
@@ -40,12 +44,20 @@ from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FONT_PATH = os.path.join(ROOT, "assets", "fonts", "BarlowCondensed-Bold.ttf")
 FACE_NAME = "Barlow Condensed Bold"
+# Google Fonts ships Roboto Condensed only as a variable font; the Bold instance is picked by name.
+CYRILLIC_FONT_PATH = os.path.join(ROOT, "assets", "fonts", "RobotoCondensed-Variable.ttf")
+CYRILLIC_INSTANCE = "Bold"
 PAD = 2  # px of transparent margin kept around every glyph, and between glyphs on the sheet
 
 DIGITS = "0123456789"
 
-# Union of the letters used by MON/TUE/WED/THU/FRI/SAT/SUN and AM/PM.
-_SMALL_WORDS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN", "AM", "PM"]
+# Union of the letters used by the weekdays that Readouts.dateHead shows and AM/PM. Keep the words in
+# step with Readouts.dateHead: English, Polish, then Ukrainian and Russian.
+_SMALL_WORDS = [
+    "MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN", "AM", "PM",
+    "NDZ", "PON", "WT", "ŚR", "CZW", "PT", "SOB",
+    "НД", "ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС",
+]
 SMALL_LETTERS = "".join(sorted(set("".join(_SMALL_WORDS))))
 
 # The screen width the pixel sizes below are written for, and the widths to generate fonts for.
@@ -109,13 +121,16 @@ def out_dir(px):
     return os.path.join(ROOT, f"resources-round-{px}x{px}", "fonts")
 
 
-def glyph_bitmap(font, ch, style=PLAIN, px=V1_PX, antialias=False):
+def glyph_bitmap(font, ch, style=PLAIN, px=V1_PX, antialias=False, draw_font=None):
     """Render one glyph on a generous transparent canvas and tight-crop it.
 
     Every glyph is drawn at the same (PAD, PAD) origin with the 'la' (left-ascender) anchor,
     so the crop offset from that shared origin is a true per-glyph yoffset/xoffset relative
     to a common baseline -- no font metrics math needed beyond the ascent/descent used for
     the sheet-wide lineHeight/base below.
+
+    A PLAIN glyph can come from `draw_font` instead (the Cyrillic letters). It is drawn on `font`'s
+    baseline, so it lines up with `font`'s own glyphs, and the canvas gets room for its descender.
 
     A GLOW glyph reaches past the plain glyph's box, and an OUTLINE glyph is drawn with a stroke wider than
     its ring, so their canvases have a margin around the origin and their offsets are measured from the
@@ -127,7 +142,13 @@ def glyph_bitmap(font, ch, style=PLAIN, px=V1_PX, antialias=False):
     canvas_w = font.size * 2 + margin * 2
     canvas_h = ascent + descent + PAD * 2 + margin * 2
     origin = (PAD + margin, PAD + margin)
-    if style == PLAIN:
+    if draw_font is not None:
+        assert style == PLAIN, "only plain glyphs come from another font"
+        canvas_h += draw_font.getmetrics()[1]
+        img = Image.new("LA", (canvas_w, canvas_h), (0, 0))
+        ImageDraw.Draw(img).text((origin[0], origin[1] + ascent), ch, font=draw_font, fill=(255, 255), anchor="ls")
+        alpha = img.getchannel("A")
+    elif style == PLAIN:
         img = Image.new("LA", (canvas_w, canvas_h), (0, 0))
         ImageDraw.Draw(img).text(origin, ch, font=font, fill=(255, 255), anchor="la")
         alpha = img.getchannel("A")
@@ -161,6 +182,25 @@ def glyph_bitmap(font, ch, style=PLAIN, px=V1_PX, antialias=False):
         # glyphs start inside it.
         yoffset += line_extension(style, px)
     return cropped, xoffset, yoffset
+
+
+def is_cyrillic(ch):
+    return "Ѐ" <= ch <= "ӿ"
+
+
+def cyrillic_font(font):
+    """Roboto Condensed Bold at the size whose capitals are as tall as the Barlow `font`'s."""
+    def cap_height(f, ch):
+        return -f.getbbox(ch, anchor="ls")[1]
+
+    def roboto(size):
+        f = ImageFont.truetype(CYRILLIC_FONT_PATH, size)
+        f.set_variation_by_name(CYRILLIC_INSTANCE)
+        return f
+
+    # Measured at a large size, so rounding doesn't skew the ratio.
+    ratio = cap_height(ImageFont.truetype(FONT_PATH, 1000), "H") / cap_height(roboto(1000), "Н")
+    return roboto(round(font.size * ratio))
 
 
 def glow_levels(blurred):
@@ -231,8 +271,15 @@ def build_font(directory, name, size, chars, style=PLAIN, px=V1_PX, antialias=Fa
     base = ascent + extension
     glyphs = []
     for ch in chars:
-        bitmap, xoffset, yoffset = glyph_bitmap(font, ch, style, px, antialias)
-        xadvance = round(font.getlength(ch))
+        if is_cyrillic(ch):
+            cyrillic = cyrillic_font(font)
+            bitmap, xoffset, yoffset = glyph_bitmap(font, ch, style, px, antialias, cyrillic)
+            # Pillow gives the variable font's default-weight advance; keep the Bold glyph inside it, since
+            # Connect IQ draws nothing past a glyph's advance.
+            xadvance = max(round(cyrillic.getlength(ch)), xoffset + bitmap.width)
+        else:
+            bitmap, xoffset, yoffset = glyph_bitmap(font, ch, style, px, antialias)
+            xadvance = round(font.getlength(ch))
         glyphs.append(
             {
                 "char": ch,

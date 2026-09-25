@@ -126,4 +126,4 @@ To regenerate the bitmap fonts after changing sizes or glyphs, install Pillow (`
 
 The code is under the [MIT License](LICENSE).
 
-The numeral font is [Barlow Condensed](https://github.com/jpt/barlow) Bold, under the [SIL Open Font License 1.1](assets/fonts/OFL.txt). The OFL also covers the bitmap fonts in `resources/fonts/` and `resources-round-*/fonts/`, which are generated from it.
+The numeral font is [Barlow Condensed](https://github.com/jpt/barlow) Bold, under the [SIL Open Font License 1.1](assets/fonts/OFL.txt). The Cyrillic weekday letters come from [Roboto Condensed](https://github.com/googlefonts/roboto-classic) Bold, also under the [SIL Open Font License 1.1](assets/fonts/RobotoCondensed-OFL.txt). The OFL also covers the bitmap fonts in `resources/fonts/` and `resources-round-*/fonts/`, which are generated from them.
