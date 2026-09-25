@@ -83,7 +83,7 @@ FONTS = [
 ]
 
 # The Gear glow's blur, in px on the 260 px screen (scaled like the font sizes), and the outline's width.
-# The outline is a ring inside the digit's edge, and 2 px wide it stays visible on Venu 3's low-power AMOLED panel.
+# The outline is a ring inside the digit's edge, 2 px wide.
 GLOW_SIGMA_V1 = 7.0
 OUTLINE_WIDTH_V1 = 2.0
 

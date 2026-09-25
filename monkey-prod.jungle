@@ -1,4 +1,4 @@
-project.manifest = bin/manifest-prod.xml
+project.manifest = manifest-prod.xml
 
 base.sourcePath = source
 base.resourcePath = resources
