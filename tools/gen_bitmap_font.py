@@ -35,7 +35,7 @@ import math
 import os
 from collections import namedtuple
 
-from PIL import Image, ImageDraw, ImageFilter, ImageFont
+from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FONT_PATH = os.path.join(ROOT, "assets", "fonts", "BarlowCondensed-Bold.ttf")
@@ -71,9 +71,9 @@ FONTS = [
 ]
 
 # The Gear glow's blur, in px on the 260 px screen (scaled like the font sizes), and the outline's width.
-# These match the prototype's Gear glow and its always-on Gear.
+# The outline is a ring inside the digit's edge, and 2 px wide it stays visible on Venu 3's low-power AMOLED panel.
 GLOW_SIGMA_V1 = 7.0
-OUTLINE_WIDTH_V1 = 1.3
+OUTLINE_WIDTH_V1 = 2.0
 
 # An anti-aliased font on Connect IQ has only four coverage levels: none, 1/3, 2/3 and full. The
 # resource compiler reads them off a grayscale sheet, cutting at gray 56, 136 and 216 (measured in
@@ -117,8 +117,9 @@ def glyph_bitmap(font, ch, style=PLAIN, px=V1_PX, antialias=False):
     to a common baseline -- no font metrics math needed beyond the ascent/descent used for
     the sheet-wide lineHeight/base below.
 
-    A GLOW or OUTLINE glyph reaches past the plain glyph's box, so its canvas has a margin around the
-    origin and its offsets are measured from the origin all the same. The offsets can come out negative.
+    A GLOW glyph reaches past the plain glyph's box, and an OUTLINE glyph is drawn with a stroke wider than
+    its ring, so their canvases have a margin around the origin and their offsets are measured from the
+    origin all the same. A GLOW glyph's offsets can come out negative.
     A GLOW glyph's yoffset is measured from the top of the taller line box that line_extension gives it.
     """
     ascent, descent = font.getmetrics()
@@ -137,9 +138,15 @@ def glyph_bitmap(font, ch, style=PLAIN, px=V1_PX, antialias=False):
             draw.text(origin, ch, font=font, fill=255, anchor="la")
             alpha = glow_levels(mask.filter(ImageFilter.GaussianBlur(scaled_measure(GLOW_SIGMA_V1, px))))
         else:
-            # The ring just outside the glyph: stroke it wider, then knock the glyph itself out.
-            draw.text(origin, ch, font=font, fill=0, stroke_width=scaled_measure(OUTLINE_WIDTH_V1, px), stroke_fill=255, anchor="la")
-            alpha = mask
+            # The ring just inside the glyph's edge. ImageDraw.text can only stroke outwards, so ask the font
+            # for the stroker's own band, which is centered on the edge (checked with Pillow 11.3), and keep
+            # the part of it that lies on the glyph. The ring stays inside the digit, so Connect IQ has
+            # nothing to clip at its advance.
+            band, (dx, dy) = font.getmask2(ch, "L", stroke_width=scaled_measure(OUTLINE_WIDTH_V1, px), stroke_filled=False, anchor="la")
+            mask.paste(Image.Image()._new(band), (origin[0] + dx, origin[1] + dy))
+            glyph = Image.new("L", mask.size, 0)
+            ImageDraw.Draw(glyph).text(origin, ch, font=font, fill=255, anchor="la")
+            alpha = ImageChops.darker(mask, glyph)
     if antialias and style != GLOW:
         alpha = alpha.point([LEVEL_GRAYS[round(3 * v / 255)] for v in range(256)])
     bbox = alpha.getbbox()
@@ -175,17 +182,6 @@ def widen_for_glow(glyphs):
     for g in glyphs:
         g["xoffset"] += reach
         g["xadvance"] += 2 * reach
-
-
-def clip_to_advance(glyphs):
-    """Cut a glyph's bitmap to its advance, which is all Connect IQ would draw of it in any case."""
-    for g in glyphs:
-        bmp = g["bitmap"]
-        left = max(-g["xoffset"], 0)
-        right = min(bmp.width, g["xadvance"] - g["xoffset"])
-        if left > 0 or right < bmp.width:
-            g["bitmap"] = bmp.crop((left, 0, right, bmp.height))
-            g["xoffset"] += left
 
 
 def style_margin(style, px):
@@ -249,8 +245,6 @@ def build_font(directory, name, size, chars, style=PLAIN, px=V1_PX, antialias=Fa
 
     if style == GLOW:
         widen_for_glow(glyphs)
-    elif style == OUTLINE:
-        clip_to_advance(glyphs)
 
     # Pack left to right in a single row.
     sheet_w = sum(g["bitmap"].width + PAD for g in glyphs) + PAD
