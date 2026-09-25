@@ -1,0 +1,180 @@
+<!doctype html>
+<!--
+  Connect IQ Store images that explain the gauges: 1440x720 slides with callouts around renders of the face.
+  Run `node export_faces.mjs` (renders the faces from prototype/index.html into bin/store/faces), then
+  `node shoot.mjs` (screenshots each .slide into docs/images/). Both need a headless Chrome: set CHROME to its path.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+  @font-face { font-family: "Barlow Condensed"; font-weight: 700; src: url("../../assets/fonts/BarlowCondensed-Bold.ttf"); }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #333; font-family: "Barlow Condensed", sans-serif; font-weight: 700; }
+  .slide { position: relative; width: 1440px; height: 720px; overflow: hidden; background: #0f0f0f; margin-bottom: 20px; color: #fff; }
+  .face { position: absolute; border-radius: 50%; background: #000; box-shadow: 0 0 0 10px #2a2a2a, 0 0 0 12px #444; overflow: hidden; }
+  .face img { width: 100%; height: 100%; display: block; }
+  svg.lines { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .label { position: absolute; width: 344px; }
+  .label h3, .cap h3 { margin: 0; font-size: 46px; line-height: 46px; letter-spacing: 1px; color: #fff; text-transform: uppercase; }
+  .label p, .cap p { margin: 6px 0 0; font-size: 28px; line-height: 31px; color: #a8a8a8; text-wrap: balance; }
+  .label.right { text-align: right; }
+
+  .head { position: absolute; left: 60px; top: 44px; }
+  .head .bars { display: flex; gap: 6px; margin-bottom: 18px; }
+  .head .bars i { display: block; height: 8px; width: 64px; background: #FFAA00; }
+  .head .bars i + i { width: 32px; background: #FF0000; }
+  .head h2 { margin: 0; font-size: 84px; line-height: 84px; letter-spacing: 1px; text-transform: uppercase; }
+  .head p { margin: 10px 0 0; font-size: 32px; line-height: 36px; color: #a8a8a8; }
+  .cap { position: absolute; text-align: center; }
+  .cap p { margin-left: auto; margin-right: auto; }
+  .crop { position: absolute; background: #000; border-radius: 22px; overflow: hidden; border: 2px solid #2a2a2a; }
+  .crop img { position: absolute; display: block; }
+  .readouts { position: absolute; margin: 0; padding: 0; list-style: none; }
+  .readouts li { font-size: 40px; line-height: 40px; margin-bottom: 15px; display: flex; align-items: center; gap: 16px; }
+  .readouts li::before { content: ""; width: 14px; height: 14px; background: #FFAA00; flex: none; }
+</style>
+</head>
+<body>
+<div class="slide" id="overview" data-file="store-1-overview"></div>
+<div class="slide" id="minute-style" data-file="store-2-minute-style">
+  <div class="head"><div class="bars"><i></i><i></i></div><h2>Minute Style</h2><p>Pick one in the Garmin Connect app. It turns red past minute 50.</p></div>
+</div>
+<div class="slide" id="fuel-gauge" data-file="store-3-fuel-gauge">
+  <div class="head"><div class="bars"><i></i><i></i></div><h2>Fuel Gauge</h2><p style="max-width:440px">Your battery, like a car's fuel gauge. Ten segments, 10% each.</p></div>
+</div>
+<div class="slide" id="slots" data-file="store-4-slots">
+  <div class="head"><div class="bars"><i></i><i></i></div><h2>Slots</h2><p>Four places on the face. Each one shows what you choose.</p></div>
+</div>
+<script>
+// Face geometry, in the 260 px logical space of the prototype.
+const CXL = 130, CYL = 130;
+const polar = (deg, r) => [CXL + r * Math.cos(deg * Math.PI / 180), CYL - r * Math.sin(deg * Math.PI / 180)];
+const minuteDeg = m => 180 - m * 3;
+const AMBER = '#FFAA00';
+
+function addFace(root, face, cx, cy, d) {
+  const el = document.createElement('div'); el.className = 'face';
+  Object.assign(el.style, { left: `${cx - d / 2}px`, top: `${cy - d / 2}px`, width: `${d}px`, height: `${d}px` });
+  el.innerHTML = `<img src="../../bin/store/faces/${face}.png">`;
+  root.appendChild(el);
+}
+
+// Face with callouts around it. Each callout is a label in a side column, an underline that runs
+// toward the face, and a straight line to the target: a dot, a ring around an icon, or a box.
+function calloutSlide(id, face, cx, cy, d, callouts, boxes = []) {
+  const root = document.getElementById(id), k = d / 260;
+  const px = ([lx, ly]) => [cx + (lx - CXL) * k, cy + (ly - CYL) * k];
+  addFace(root, face, cx, cy, d);
+  let svg = '';
+  const rect = ([x, y, w, h]) => { const [a, b] = px([x, y]); return [a, b, w * k, h * k]; };
+  for (const b of boxes) {
+    const [x, y, w, h] = rect(b);
+    svg += `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="10" fill="none" stroke="${AMBER}" stroke-width="2.5" stroke-dasharray="7 5"/>`;
+  }
+  for (const c of callouts) {
+    const left = c.side === 'left';
+    const x0 = left ? 48 : 1392, xEdge = left ? cx - d / 2 - 22 : cx + d / 2 + 22;
+    const lab = document.createElement('div'); lab.className = `label ${left ? 'left' : 'right'}`;
+    lab.style.top = `${c.y}px`; lab.style[left ? 'left' : 'right'] = '48px';
+    lab.innerHTML = `<h3>${c.title}</h3><p>${c.desc}</p>`;
+    root.appendChild(lab);
+    const uy = c.y + 46 + 4;
+    let [tx, ty] = c.box ? (() => { const [x, y, w, h] = rect(c.box); return [left ? x : x + w, y + h / 2]; })() : px(c.target);
+    let end = '';
+    if (c.ring) {
+      const dx = xEdge - tx, dy = uy - ty, n = Math.hypot(dx, dy), r = c.ring;
+      end = `<circle cx="${tx}" cy="${ty}" r="${r}" fill="none" stroke="${AMBER}" stroke-width="2.5"/>`;
+      tx += dx / n * r; ty += dy / n * r;
+    } else if (!c.box) {
+      end = `<circle cx="${tx}" cy="${ty}" r="6" fill="${AMBER}" stroke="#0f0f0f" stroke-width="2"/>`;
+    }
+    svg += `<polyline points="${x0},${uy} ${xEdge},${uy} ${tx},${ty}" fill="none" stroke="${AMBER}" stroke-width="2.5" stroke-linejoin="round"/>${end}`;
+  }
+  root.insertAdjacentHTML('beforeend', `<svg class="lines" viewBox="0 0 1440 720">${svg}</svg>`);
+}
+
+function caption(root, cx, top, width, title, desc) {
+  const el = document.createElement('div'); el.className = 'cap';
+  Object.assign(el.style, { left: `${cx - width / 2}px`, top: `${top}px`, width: `${width}px` });
+  el.innerHTML = `<h3>${title}</h3><p>${desc}</p>`;
+  root.appendChild(el);
+}
+
+// The four Slots on the 260 px face: Left, Center, Right, Bottom.
+const SLOT_BOXES = [[32, 146, 56, 46], [102, 146, 56, 46], [172, 146, 56, 46], [94, 200, 72, 28]];
+
+// ---- 1. Overview --------------------------------------------------------------------------------
+calloutSlide('overview', 'overview', 720, 360, 600, [
+  { side: 'left',  y: 60,  title: 'Minute Sweep',  desc: 'Amber arc grows with the minutes',  target: polar(minuteDeg(19), 124) },
+  { side: 'left',  y: 210, title: 'Tachometer',    desc: 'Each number is 10 minutes',          target: polar(minuteDeg(8), 113) },
+  { side: 'left',  y: 360, title: 'Rev Bar',       desc: 'Seconds. Fills across the minute',   target: polar(minuteDeg(15), 80) },
+  { side: 'left',  y: 540, title: 'Low-Fuel Lamp', desc: 'Amber at 20%, red at 10%',           target: polar(223, 114), ring: 20 },
+  { side: 'right', y: 60,  title: 'Redline',       desc: 'Minutes 50 to 60',                   target: polar(minuteDeg(52), 124) },
+  { side: 'right', y: 210, title: 'Gear',          desc: 'The hour, like a car’s gear',   target: [152, 112] },
+  { side: 'right', y: 360, title: 'Slots',         desc: 'Steps, date, heart rate, weather and more', box: SLOT_BOXES[2] },
+  { side: 'right', y: 540, title: 'Fuel Gauge',    desc: 'Battery, in 10 segments',            target: polar(287, 124) },
+], [SLOT_BOXES[0], SLOT_BOXES[1], SLOT_BOXES[2], SLOT_BOXES[3]]);
+
+// ---- 2. Minute Style ----------------------------------------------------------------------------
+{
+  const root = document.getElementById('minute-style'), d = 320, cy = 398;
+  const items = [
+    ['needle',   'Needle',      'A thin pointer at the minute'],
+    ['sweep',    'Sweep',       'A filled arc up to the minute'],
+    ['sweeptip', 'Sweep + Tip', 'The arc with a white tip. The default'],
+  ];
+  items.forEach(([face, title, desc], i) => {
+    const cx = 260 + i * 460;
+    addFace(root, face, cx, cy, d);
+    caption(root, cx, cy + d / 2 + 36, 400, title, desc);
+  });
+}
+
+// ---- 3. Fuel Gauge ------------------------------------------------------------------------------
+{
+  const root = document.getElementById('fuel-gauge');
+  addFace(root, 'overview', 250, 478, 320);
+  const items = [
+    ['fuel_full',     'Solar',    'A sun shows while solar charges'],
+    ['fuel_charging', 'Charging', 'A green bolt shows on the charger'],
+    ['fuel_20',       'Low',      'The Low-Fuel Lamp turns amber at 20%'],
+    ['fuel_10',       'Empty',    'The Low-Fuel Lamp turns red at 10%'],
+  ];
+  const w = 320, h = 104, s = w / 204, x0 = 28, y0 = 196, left = 560, pitch = 128, top0 = 92;   // crop window in logical px
+  items.forEach(([face, title, desc], i) => {
+    const top = top0 + i * pitch;
+    const box = document.createElement('div'); box.className = 'crop';
+    Object.assign(box.style, { left: `${left}px`, top: `${top}px`, width: `${w + 4}px`, height: `${h + 4}px` });
+    box.innerHTML = `<img src="../../bin/store/faces/${face}.png" style="width:${260 * s}px;height:${260 * s}px;left:${-x0 * s}px;top:${-y0 * s}px">`;
+    root.appendChild(box);
+    const el = document.createElement('div'); el.className = 'cap';
+    Object.assign(el.style, { left: `${left + w + 44}px`, top: `${top + 10}px`, width: `${1380 - (left + w + 44)}px`, textAlign: 'left' });
+    el.innerHTML = `<h3>${title}</h3><p style="margin-left:0">${desc}</p>`;
+    root.appendChild(el);
+  });
+}
+
+// ---- 4. Slots -----------------------------------------------------------------------------------
+{
+  const root = document.getElementById('slots'), d = 400, cy = 440;
+  const faces = [['overview', 250], ['slots_b', 700]];
+  let svg = '';
+  for (const [face, cx] of faces) {
+    addFace(root, face, cx, cy, d);
+    const k = d / 260;
+    for (const [x, y, w, h] of SLOT_BOXES) {
+      svg += `<rect x="${cx + (x - CXL) * k}" y="${cy + (y - CYL) * k}" width="${w * k}" height="${h * k}" rx="8" fill="none" stroke="${AMBER}" stroke-width="2.5" stroke-dasharray="6 4"/>`;
+    }
+  }
+  root.insertAdjacentHTML('beforeend', `<svg class="lines" viewBox="0 0 1440 720">${svg}</svg>`);
+  const list = document.createElement('ul'); list.className = 'readouts';
+  Object.assign(list.style, { left: '1010px', top: '236px' });
+  list.innerHTML = ['Date', 'Steps', 'Weather', 'Heart rate', 'Body Battery', 'Sunrise and sunset', 'Notifications', 'Battery %']
+    .map(t => `<li>${t}</li>`).join('');
+  root.insertAdjacentHTML('beforeend', `<div style="position:absolute;left:1010px;top:170px;font-size:36px;line-height:36px;color:${AMBER};text-transform:uppercase;letter-spacing:1px">Choose from</div>`);
+  root.appendChild(list);
+}
+</script>
+</body>
+</html>
