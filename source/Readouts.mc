@@ -59,9 +59,22 @@ module Readouts {
     const TEMP_FEELS_LIKE = 0;
     const TEMP_ACTUAL = 1;
 
-    // Pure: ticket 02's English-only, uppercase weekday abbreviation.
-    function dateHead(dayOfWeek as String) as String {
-        return dayOfWeek.toUpper();
+    // Pure: the uppercase weekday abbreviation for Gregorian's day_of_week number (1 is Sunday). Polish,
+    // Ukrainian and Russian watches get their own; every other language gets English. The watch's
+    // localized name isn't used, since SmallFont only has these letters (tools/gen_bitmap_font.py keeps
+    // the same words).
+    function dateHead(dayOfWeek as Number, language as System.Language) as String {
+        var names;
+        if (language == System.LANGUAGE_POL) {
+            names = ["NDZ", "PON", "WT", "ŚR", "CZW", "PT", "SOB"];
+        } else if (language == System.LANGUAGE_UKR) {
+            names = ["НД", "ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ"];
+        } else if (language == System.LANGUAGE_RUS) {
+            names = ["ВС", "ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ"];
+        } else {
+            names = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+        }
+        return names[dayOfWeek - 1];
     }
 
     // Pure: "--" for missing data, otherwise the value as text. No Readout in this design
@@ -188,8 +201,8 @@ module Readouts {
     }
 
     function dateReadout() as ReadoutContent {
-        var info = Gregorian.info(Time.now(), Time.FORMAT_MEDIUM);
-        var head = dateHead(info.day_of_week as String);
+        var info = Gregorian.info(Time.now(), Time.FORMAT_SHORT);
+        var head = dateHead(info.day_of_week as Number, System.getDeviceSettings().systemLanguage);
         return new ReadoutContent(DATE, head, (info.day as Number).toString(), Graphics.COLOR_WHITE, Graphics.COLOR_WHITE, 0);
     }
 

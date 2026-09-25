@@ -5,9 +5,37 @@ import Toybox.Weather;
 import Toybox.Time;
 import Toybox.Test;
 
+// Gregorian's day_of_week number, 1 for Sunday, gives the abbreviation from the face's own tables, not
+// the watch's localized name: SmallFont only has these letters, so a name like "Пт" drew as boxes.
 (:test)
-function testDateHeadIsUppercase(logger as Test.Logger) as Boolean {
-    return Readouts.dateHead("Wed").equals("WED");
+function testDateHeadIsEnglishByDefault(logger as Test.Logger) as Boolean {
+    return Readouts.dateHead(1, System.LANGUAGE_ENG).equals("SUN")
+        && Readouts.dateHead(4, System.LANGUAGE_ENG).equals("WED")
+        && Readouts.dateHead(7, System.LANGUAGE_ENG).equals("SAT");
+}
+
+(:test)
+function testDateHeadIsEnglishForALanguageWithoutItsOwnTable(logger as Test.Logger) as Boolean {
+    return Readouts.dateHead(6, System.LANGUAGE_DEU).equals("FRI");
+}
+
+(:test)
+function testDateHeadIsPolishOnAPolishWatch(logger as Test.Logger) as Boolean {
+    return Readouts.dateHead(1, System.LANGUAGE_POL).equals("NDZ")
+        && Readouts.dateHead(4, System.LANGUAGE_POL).equals("ŚR")
+        && Readouts.dateHead(5, System.LANGUAGE_POL).equals("CZW");
+}
+
+(:test)
+function testDateHeadIsUkrainianOnAUkrainianWatch(logger as Test.Logger) as Boolean {
+    return Readouts.dateHead(1, System.LANGUAGE_UKR).equals("НД")
+        && Readouts.dateHead(6, System.LANGUAGE_UKR).equals("ПТ");
+}
+
+(:test)
+function testDateHeadIsRussianOnARussianWatch(logger as Test.Logger) as Boolean {
+    return Readouts.dateHead(1, System.LANGUAGE_RUS).equals("ВС")
+        && Readouts.dateHead(4, System.LANGUAGE_RUS).equals("СР");
 }
 
 (:test)
