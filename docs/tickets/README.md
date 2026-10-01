@@ -35,6 +35,15 @@ Specified in [`docs/specs/multi-device.md`](../specs/multi-device.md). All four 
 | 12 | [240 and 280 MIP watches](12-240-280-mip-watches.md) | 11 |
 | 13 | [AMOLED watches](13-amoled-watches.md) | 11 |
 
+### MIP font legibility
+
+A fenix 6S Pro user found the Slot values too bold and hard to read. Ticket 14 fixes the fat 1-bit glyphs on every MIP watch, and ticket 15 makes the 240 px Slot values larger and releases both as 0.3.2.
+
+| # | Ticket | Depends on |
+|---|--------|------------|
+| 14 | [Clean 1-bit fonts on MIP watches](14-clean-mip-fonts.md) | none |
+| 15 | [Larger Slot values on 240 px watches, release 0.3.2](15-larger-slot-values-240.md) | 14 |
+
 ## Shared facts
 
 - v1 target: fenix 7 Pro Sapphire Solar 47mm, device id `fenix7pro`, 260×260 round MIP display, 64 colors, Connect IQ API 5.2. Tickets 10 to 13 add more watches (see the multi-device spec).
