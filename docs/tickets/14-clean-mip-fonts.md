@@ -1,6 +1,6 @@
 # 14: Clean 1-bit fonts on MIP watches
 
-Status: open
+Status: done
 Depends on: none
 Blocks: 15
 Spec: [`docs/design.md`](../design.md) "Look", [`docs/specs/multi-device.md`](../specs/multi-device.md) "Scaling"
@@ -39,14 +39,28 @@ To reproduce the "before" state for prod 0.3.0 and earlier, copy `manifest.xml` 
 
 ## Acceptance
 
-- [ ] The MIP sheets have only alpha 0 and 255, and every MIP glyph has `xadvance >= xoffset + width + 1`.
-- [ ] Regenerating leaves the AMOLED sets and the stand-ins byte-identical.
-- [ ] Simulator window screenshots, before and after, on `fenix6spro` (240), `fenix7pro` (260) and `fenix7x` (280): `13°` and `--` draw with clear gaps, the `6`/`8`/`9` counters are open, and the weekday head and AM/PM read cleanly.
-- [ ] Unit tests pass on those three watches, and `monkeyc -e` builds every product.
-- [ ] The docs listed above are updated.
+- [x] The MIP sheets have only alpha 0 and 255, and every MIP glyph has `xadvance >= xoffset + width + 1`.
+- [x] Regenerating leaves the AMOLED sets and the stand-ins byte-identical.
+- [x] Simulator window screenshots, before and after, on `fenix6spro` (240), `fenix7pro` (260) and `fenix7x` (280): `13°` and `--` draw with clear gaps, the `6`/`8`/`9` counters are open, and the weekday head and AM/PM read cleanly.
+- [x] Unit tests pass on those three watches, and `monkeyc -e` builds every product.
+- [x] The docs listed above are updated.
 
 ## Decisions
 
 - **All MIP sizes, not just 240.** Agreed with the maintainer in a grilling session on 2026-10-01. The fenix 7 Pro has the same fault, so the 260 face changes slightly (thinner, cleaner glyphs), and "pixel-identical to v1" no longer holds for the fonts. That rule only guarded the multi-device migration.
 - **AMOLED stays as it is.** Its fonts are anti-aliased, with four levels that the generator already picks, so the compiler doesn't round them.
 - **Fix the cause, not only the size.** The customer asked for a larger font. A larger font alone would still be fat and would still touch.
+
+## Results
+
+Done on 2026-10-01.
+
+- **Generator.** `tools/gen_bitmap_font.py` cuts every non-anti-aliased glyph's alpha at 128 (`ONE_BIT_CUT`) before it crops, and sets `xadvance = max(xadvance, xoffset + width + 1)` for them, Cyrillic letters included. The anti-aliased path is untouched. The docstring now says the MIP fonts were re-cut and are not pixel-identical to v1.
+- **Fonts.** Regenerating changes 24 files: the four plain fonts (`gear`, `tachometer_numeral`, `slot_value`, `small`), `.fnt` and `.png`, in each of `resources/fonts` (260), `resources-round-240x240/fonts` and `resources-round-280x280/fonts`. A checksum of every font file before and after shows the five AMOLED sets (360 to 466 px) and the `gear_glow` and `gear_outline` stand-ins byte-identical. Every MIP sheet has only alpha 0 and 255, and every MIP glyph meets `xadvance >= xoffset + width + 1`.
+- **Simulator, before and after.** Window screenshots on `fenix6spro` (240), `fenix7pro` (260) and `fenix7x` (280), the "before" built from this branch before the change (its code is the same as `main`'s):
+  - `13°` was one merged shape on all three before and draws as two clear digits and a degree sign after.
+  - `--` was one bar before and shows two dashes after.
+  - The `6` of the Tachometer has an open counter. The Gear showed `7` during the check, so the `8` and `9` counters were checked on the sheets only (see the pixel counts under Background), not on screen.
+  - `THU` and `PM` read cleanly, with a gap between the letters.
+- **Tests.** 99 of 99 unit tests pass on `fenix6spro`, `fenix7pro` and `fenix7x`. `monkeyc -e` builds all 146 products and ends with `BUILD SUCCESSFUL`.
+- **Docs.** `AGENTS.md` ("Connect IQ gotchas"), `docs/design.md` ("Look") and `docs/specs/multi-device.md` ("Scaling") are updated as the scope says.
