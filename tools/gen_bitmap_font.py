@@ -19,13 +19,20 @@ with that screen.
 The AMOLED watches (docs/specs/multi-device.md "AMOLED, awake" and "AMOLED, always-on") differ in three
 ways, at their five resolutions (360 to 466 px):
 
-- Their fonts are anti-aliased (`antialias="true"` in fonts.xml). The MIP watches keep 1-bit fonts, so
-  their 260 px face stays pixel-identical to v1.
+- Their fonts are anti-aliased (`antialias="true"` in fonts.xml). The MIP watches keep 1-bit fonts. The 260 px
+  face keeps v1's geometry, but its fonts were re-cut (see below), so they are not pixel-identical to v1.
 - They get two more Gear fonts, `gear_glow` and `gear_outline`. `gear_glow` is the Gear's digits with
   a Gaussian blur baked in, in three brightness bands, which the face draws under the Gear as a soft
   glow. `gear_outline` is the digits as an outline only, for the always-on view.
 - The code refers to both new fonts by resource id on every watch, so resources/fonts/ also holds a tiny
   stand-in for each. The MIP watches never load them, and an AMOLED resolution's own set replaces them.
+
+The MIP sets are 1-bit, and the resource compiler rounds a sheet's alpha to 1 bit by lighting every pixel with
+any alpha at all. That grows each glyph by about a pixel on each side, closes small counters (6, 8, 9) and
+makes neighbours touch. So the generator cuts the alpha at 128 itself, to fully on or fully off, and crops each
+glyph to that ink. It also makes each glyph's advance at least its ink's right edge plus 1 px, so neighbours
+always have a clear pixel between them and nothing reaches past its advance, where Connect IQ would cut it off.
+The AMOLED sets and the stand-ins don't get this treatment.
 
 Barlow Condensed has no Cyrillic, so the small font's Cyrillic letters (the Ukrainian and Russian weekdays)
 come from Roboto Condensed Bold instead, scaled so its capitals are as tall as Barlow's and set on Barlow's
@@ -103,6 +110,10 @@ GLOW_THRESHOLDS = [0.08, 0.24, 0.41]
 
 STAND_IN_GLYPH_PX = 2
 
+# A 1-bit font's glyph is lit where the rendered alpha is at least this. The resource compiler would light
+# any alpha above 0, and every glyph would grow by about a pixel on each side.
+ONE_BIT_CUT = 128
+
 
 def scaled_size(v1_size, px):
     """The pixel size for a screen `px` wide. Halves round up (Python's round() would round 22.5 down)."""
@@ -170,6 +181,8 @@ def glyph_bitmap(font, ch, style=PLAIN, px=V1_PX, antialias=False, draw_font=Non
             alpha = ImageChops.darker(mask, glyph)
     if antialias and style != GLOW:
         alpha = alpha.point([LEVEL_GRAYS[round(3 * v / 255)] for v in range(256)])
+    elif not antialias:
+        alpha = alpha.point([255 if v >= ONE_BIT_CUT else 0 for v in range(256)])
     bbox = alpha.getbbox()
     if bbox is None:
         # Whitespace-shaped glyph (shouldn't occur for our glyph sets): keep a 1px stub.
@@ -280,6 +293,9 @@ def build_font(directory, name, size, chars, style=PLAIN, px=V1_PX, antialias=Fa
         else:
             bitmap, xoffset, yoffset = glyph_bitmap(font, ch, style, px, antialias)
             xadvance = round(font.getlength(ch))
+        if not antialias:
+            # At least 1 px of clear space after the ink, so neighbours never touch.
+            xadvance = max(xadvance, xoffset + bitmap.width + 1)
         glyphs.append(
             {
                 "char": ch,

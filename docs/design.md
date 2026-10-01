@@ -69,7 +69,7 @@ Agreed on 2026-09-23 in a design grilling session. The vocabulary lives in [`CON
 ## Look
 
 - Black background, white ticks and numerals, red Redline, amber Minute Style.
-- Numeral font for the Gear and the Tachometer: condensed DIN style, shipped to the watch as a custom bitmap font. A 7-segment font was tried and rejected because `1` becomes two thin bars and hours like `11` read poorly. Bitmap fonts don't scale, so `tools/gen_bitmap_font.py` generates a set per screen size. The AMOLED sets are anti-aliased, with four coverage levels; the MIP sets are 1-bit.
+- Numeral font for the Gear and the Tachometer: condensed DIN style, shipped to the watch as a custom bitmap font. A 7-segment font was tried and rejected because `1` becomes two thin bars and hours like `11` read poorly. Bitmap fonts don't scale, so `tools/gen_bitmap_font.py` generates a set per screen size. The AMOLED sets are anti-aliased, with four coverage levels; the MIP sets are 1-bit, cut at the glyph outline, with at least 1 px between glyphs.
 
 ## AMOLED look
 
