@@ -89,6 +89,11 @@ FONTS = [
     Font("gear_outline", "GearOutlineFont", 89, DIGITS, OUTLINE),
 ]
 
+# Pixel sizes that replace the scaled one, by (font name, screen width). Scaling the Slot value font to
+# the 240 px screens gives 18 px, which was hard to read there, so those watches get 22 px
+# (docs/specs/multi-device.md "Scaling"). Only this one font at this one width differs.
+SIZE_OVERRIDES = {("slot_value", 240): 22}
+
 # The Gear glow's blur, in px on the 260 px screen (scaled like the font sizes), and the outline's width.
 # The outline is a ring inside the digit's edge, 2 px wide.
 GLOW_SIGMA_V1 = 7.0
@@ -118,6 +123,11 @@ ONE_BIT_CUT = 128
 def scaled_size(v1_size, px):
     """The pixel size for a screen `px` wide. Halves round up (Python's round() would round 22.5 down)."""
     return math.floor(v1_size * px / V1_PX + 0.5)
+
+
+def font_size(font, px):
+    """The pixel size `font` is drawn at on a screen `px` wide: its override if it has one, else the scaled size."""
+    return SIZE_OVERRIDES.get((font.name, px), scaled_size(font.v1_size, px))
 
 
 def scaled_measure(v1_value, px):
@@ -401,7 +411,7 @@ def main():
         fonts = fonts_for(px)
         for font, real in fonts:
             if real:
-                build_font(directory, font.name, scaled_size(font.v1_size, px), font.glyphs, font.style, px, px in AMOLED_RESOLUTIONS)
+                build_font(directory, font.name, font_size(font, px), font.glyphs, font.style, px, px in AMOLED_RESOLUTIONS)
             else:
                 build_stand_in(directory, font.name)
         write_fonts_xml(directory, [font for font, _ in fonts], px in AMOLED_RESOLUTIONS)
