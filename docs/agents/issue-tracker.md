@@ -1,6 +1,8 @@
 # Issue tracker: Local Markdown
 
-Tickets and specs for this repo are markdown files committed to `main`. Planned work goes here, not into GitHub Issues.
+Tickets and specs for this repo are markdown files. Planned work goes here, not into GitHub Issues.
+
+Commit new tickets and specs on the feature branch that implements them, not on `main`. They reach `main` when that branch merges.
 
 ## Conventions
 

@@ -41,8 +41,9 @@ The fenix 5 Plus, 5S Plus and 5X Plus are in, but only on firmware with Connect 
 
 ## Scaling
 
-- Everything scales in proportion to the screen. The scale factor is `s = R / 130`, where `R` is half the screen width. Every radius offset, position offset, icon size and pen width that is written for 260 px today gets multiplied by `s`. At 260 px (`s = 1`) the face must stay pixel-identical to v1.
+- Everything scales in proportion to the screen. The scale factor is `s = R / 130`, where `R` is half the screen width. Every radius offset, position offset, icon size and pen width that is written for 260 px today gets multiplied by `s`. At 260 px (`s = 1`) the geometry is v1's. The fonts are not pixel-identical to v1: ticket 14 re-cut the MIP fonts at their true outline (see `tools/gen_bitmap_font.py`).
 - `tools/gen_bitmap_font.py` generates the bitmap fonts once per resolution, at the v1 pixel sizes multiplied by `s`, into `resources-round-WxH/fonts/`. `resources/fonts/` stays the 260 set.
+- One exception to the scaling: the 240 px Slot value font is 22 px, not the scaled 18 px (`SIZE_OVERRIDES` in the generator). Scaling made the Slot values hard to read on the small screens (a fenix 6S Pro user reported it). All four Slots use that one font, and every other font and every other resolution keeps its scaled size.
 - The face looks the same on every screen, just bigger or smaller.
 
 ## MIP watches
