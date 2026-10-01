@@ -1,6 +1,6 @@
 # 15: Larger Slot values on 240 px watches, release 0.3.2
 
-Status: open
+Status: partial
 Depends on: 14
 Spec: [`docs/specs/multi-device.md`](../specs/multi-device.md) "Scaling"
 
@@ -33,12 +33,12 @@ Fit, worked out from the font's advances with ticket 14's 1 px guard, at 22 px:
 
 ## Acceptance
 
-- [ ] The 240 px `slot_value` font is 22 px (or 21 px, with the reason recorded), and every other font is at its scaled size.
-- [ ] A simulator window screenshot on `fenix6spro` with the worst-case values shows no overlap or clipping.
+- [x] The 240 px `slot_value` font is 22 px (or 21 px, with the reason recorded), and every other font is at its scaled size.
+- [x] A simulator window screenshot on `fenix6spro` with the worst-case values shows no overlap or clipping.
 - [ ] Peak memory on `fenix6spro` is recorded here, under 85% of the simulator limit.
-- [ ] Unit tests pass on `fenix6spro`.
-- [ ] The spec records the 240 px exception.
-- [ ] `manifest.xml` says 0.3.2, and `bin/tachometer-prod.iq` builds.
+- [x] Unit tests pass on `fenix6spro`.
+- [x] The spec records the 240 px exception.
+- [x] `manifest.xml` says 0.3.2, and `bin/tachometer-prod.iq` builds.
 
 ## Decisions
 
@@ -51,3 +51,15 @@ Agreed with the maintainer in a grilling session on 2026-10-01:
 ## Comments
 
 - 2026-10-01: `~/.garmin/tachometer-watchface/` holds only `developer_key.pem` now. The `.der` that `AGENTS.md` and `tools/export_iq.sh` expect there is gone. `~/.ciq/developer_key.der` is the same key: its public key has the same fingerprint as the `.pem`'s. Sign with that, or the store rejects the update as coming from a different key. Either put a `.der` back at the default path, or update `AGENTS.md`.
+
+## Results
+
+Done on 2026-10-01, except the peak memory figure and the maintainer's steps.
+
+- **Generator.** `tools/gen_bitmap_font.py` has `SIZE_OVERRIDES = {("slot_value", 240): 22}`, applied through `font_size`. Regenerating changes only `resources-round-240x240/fonts/slot_value.fnt` and `.png`. Every other font and size is unchanged.
+- **Fit.** Checked on `fenix6spro` with a throwaway `Readouts.get` that returned `88888` in Left and Center, `100%` in Right and `-12°` with the partly cloudy icon in Bottom. Nothing overlaps, the Left and Right values stay well inside the screen edge, and the Bottom value clears the Fuel Gauge. 22 px fits, so there is no fallback to 21 px. The source was put back (`git checkout source/Readouts.mc`).
+- **Memory.** Not recorded yet. The simulator's status bar read 38.0 of 91.8 kB (about 41%) on `fenix6spro` with the final build, which is the current figure and not the peak. The peak from File > View Memory still has to be read and written here, and the box above stays open until then.
+- **Tests.** 99 of 99 unit tests pass on `fenix6spro`.
+- **Spec.** `docs/specs/multi-device.md` "Scaling" records the 240 px exception.
+- **Release.** `manifest.xml` says 0.3.2. `DEVELOPER_KEY=~/.ciq/developer_key.der tools/export_iq.sh prod` built all 146 products into `bin/tachometer-prod.iq`.
+- **Left for the maintainer.** Read the peak memory, upload 0.3.2 to the Connect IQ Store, and reply to the customer once it's live.
