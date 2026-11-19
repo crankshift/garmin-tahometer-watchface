@@ -6,7 +6,7 @@
     name="@Strings.AppName"
     entry="TachometerWatchFaceApp"
     launcherIcon="@Drawables.LauncherIcon"
-    version="0.3.2"
+    version="0.3.3"
     minSdkVersion="3.3.0">
     <iq:products>
       <iq:product id="approachs50"/>
@@ -102,6 +102,7 @@
       <iq:product id="vivoactive6"/>
     </iq:products>
     <iq:permissions>
+      <iq:uses-permission id="Positioning"/>
       <iq:uses-permission id="SensorHistory"/>
     </iq:permissions>
     <iq:languages>

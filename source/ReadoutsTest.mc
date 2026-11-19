@@ -2,6 +2,7 @@ import Toybox.Lang;
 import Toybox.Graphics;
 import Toybox.System;
 import Toybox.Weather;
+import Toybox.Position;
 import Toybox.Time;
 import Toybox.Test;
 
@@ -159,6 +160,65 @@ function testChooseNextSunEventNullWhenTodayDataMissing(logger as Test.Logger) a
 function testChooseNextSunEventNullWhenTomorrowMissingAfterSunset(logger as Test.Logger) as Boolean {
     var now = new Time.Moment(3500);
     return Readouts.chooseNextSunEvent(now, new Time.Moment(2000), new Time.Moment(3000), null) == null;
+}
+
+// A Location in degrees, for the sun location tests.
+(:debug)
+function sunTestLocation(latitude as Float, longitude as Float) as Position.Location {
+    return new Position.Location({ :latitude => latitude, :longitude => longitude, :format => :degrees });
+}
+
+// Ticket 16: phone weather first, then the watch's last GPS fix, then the saved last known location.
+(:test)
+function testPickSunLocationPrefersWeatherThenGpsThenSaved(logger as Test.Logger) as Boolean {
+    var weather = sunTestLocation(52.0, 21.0);
+    var gps = sunTestLocation(53.0, 21.0);
+    var saved = sunTestLocation(54.0, 21.0);
+    return Readouts.pickSunLocation(weather, gps, saved) == weather
+        && Readouts.pickSunLocation(weather, null, saved) == weather
+        && Readouts.pickSunLocation(weather, gps, null) == weather
+        && Readouts.pickSunLocation(null, gps, saved) == gps
+        && Readouts.pickSunLocation(null, null, saved) == saved;
+}
+
+// The reporter's case: no phone weather, a fresh GPS fix, nothing saved yet.
+(:test)
+function testPickSunLocationUsesGpsWhenItIsTheOnlyOne(logger as Test.Logger) as Boolean {
+    var gps = sunTestLocation(53.0, 21.0);
+    return Readouts.pickSunLocation(null, gps, null) == gps;
+}
+
+(:test)
+function testPickSunLocationNullWhenNoSourceHasOne(logger as Test.Logger) as Boolean {
+    return Readouts.pickSunLocation(null, null, null) == null;
+}
+
+// Some watches report a missing GPS fix as 180°, 180° instead of null. It must not reach the sun
+// calls or overwrite a good saved location.
+(:test)
+function testUsableSunLocationDropsImpossibleCoordinates(logger as Test.Logger) as Boolean {
+    var good = sunTestLocation(52.23, 21.01);
+    return Readouts.usableSunLocation(good) == good
+        && Readouts.usableSunLocation(sunTestLocation(180.0, 180.0)) == null
+        && Readouts.usableSunLocation(null) == null;
+}
+
+// The saved location is rewritten only when the live one is more than 0.01° away in latitude or
+// longitude, so flash isn't written every minute.
+(:test)
+function testShouldSaveSunLocationWhenNothingIsSaved(logger as Test.Logger) as Boolean {
+    return Readouts.shouldSaveSunLocation(null, [52.23, 21.01]);
+}
+
+(:test)
+function testShouldNotSaveSunLocationThatMovedUnderAHundredthOfADegree(logger as Test.Logger) as Boolean {
+    return !Readouts.shouldSaveSunLocation([52.23, 21.01], [52.235, 21.005]);
+}
+
+(:test)
+function testShouldSaveSunLocationThatMovedInLatitudeOrLongitude(logger as Test.Logger) as Boolean {
+    return Readouts.shouldSaveSunLocation([52.23, 21.01], [52.25, 21.01])
+        && Readouts.shouldSaveSunLocation([52.23, 21.01], [52.23, 20.99]);
 }
 
 (:test)

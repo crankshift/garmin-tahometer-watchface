@@ -18,7 +18,7 @@ Weather, Body Battery, sunrise/sunset and notifications Readouts, plus the Weath
   - Map the 54 `CONDITION_*` constants onto the prototype's seven icons: clear, partly cloudy, cloudy, rain, snow, thunder, fog. Keep the mapping table in one place.
 - **Body Battery:** the newest sample from `SensorHistory.getBodyBatteryHistory()` (API 3.3.0), 0 to 100. Blue vertical battery icon filled to the level.
 - **Sunrise/sunset:**
-  - Use `Weather.getSunrise(location, moment)` and `Weather.getSunset(location, moment)` (API 3.3.0). Take the location from `CurrentConditions.observationLocationPosition`, so no GPS is needed.
+  - Use `Weather.getSunrise(location, moment)` and `Weather.getSunset(location, moment)` (API 3.3.0). Take the location from `CurrentConditions.observationLocationPosition`. (Superseded by ticket 16: watches without phone weather never showed a time, so the location now falls back to the watch's last GPS fix and then to a saved last known location.)
   - Show the next event: sunrise before sunrise, sunset before sunset, and tomorrow's sunrise after that.
   - Time follows `is24Hour`: `06:42` in 24-hour mode, `6:42` in 12-hour mode.
   - Show `--` when there is no location or either call returns null.

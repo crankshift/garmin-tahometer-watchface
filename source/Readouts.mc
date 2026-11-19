@@ -56,6 +56,10 @@ module Readouts {
 
     const WEATHER_NO_DATA = -1;
 
+    // The last known location for the sunrise/sunset Readout, [latitude, longitude] in degrees.
+    const SUN_LOCATION_KEY = "SunLocation";
+    const SUN_LOCATION_MIN_MOVE_DEGREES = 0.01;
+
     const TEMP_FEELS_LIKE = 0;
     const TEMP_ACTUAL = 1;
 
@@ -200,6 +204,45 @@ module Readouts {
         return { :isRise => true, :moment => tomorrowSunrise };
     }
 
+    // Pure: where the sun times are worked out for (ticket 16). The phone weather's observation
+    // location first, then the watch's last GPS fix, then the last known location saved on the watch.
+    function pickSunLocation(
+        weather as Position.Location?,
+        gps as Position.Location?,
+        saved as Position.Location?
+    ) as Position.Location? {
+        if (weather != null) {
+            return weather;
+        }
+        if (gps != null) {
+            return gps;
+        }
+        return saved;
+    }
+
+    // Pure: the location, or null if its coordinates are impossible. Some watches report a missing
+    // GPS fix as 180°, 180° instead of null, which must not be used or saved.
+    function usableSunLocation(location as Position.Location?) as Position.Location? {
+        if (location == null) {
+            return null;
+        }
+        var degrees = location.toDegrees();
+        if (degrees[0].abs() > 90 || degrees[1].abs() > 180) {
+            return null;
+        }
+        return location;
+    }
+
+    // Pure: whether a live [latitude, longitude] in degrees is far enough from the saved one to
+    // rewrite it. Sunrise moves about 4 minutes per degree of longitude, so 0.01° is under 3 seconds.
+    function shouldSaveSunLocation(saved as Array<Numeric>?, live as Array<Numeric>) as Boolean {
+        if (saved == null) {
+            return true;
+        }
+        return (live[0] - saved[0]).abs() > SUN_LOCATION_MIN_MOVE_DEGREES
+            || (live[1] - saved[1]).abs() > SUN_LOCATION_MIN_MOVE_DEGREES;
+    }
+
     function dateReadout() as ReadoutContent {
         var info = Gregorian.info(Time.now(), Time.FORMAT_SHORT);
         var head = dateHead(info.day_of_week as Number, System.getDeviceSettings().systemLanguage);
@@ -272,9 +315,30 @@ module Readouts {
         return new ReadoutContent(SUN, null, "--", Graphics.COLOR_YELLOW, Graphics.COLOR_WHITE, 1);
     }
 
-    function sunReadout() as ReadoutContent {
+    // The location for the sun times, through pickSunLocation. Also saves a live location (weather
+    // or GPS), so the Readout keeps working after a reboot or while the phone is away.
+    // currentLocation is always null unless the manifest declares the Positioning permission.
+    function sunLocation() as Position.Location? {
         var conditions = Weather.getCurrentConditions();
-        var location = conditions != null ? conditions.observationLocationPosition : null;
+        var weather = usableSunLocation(conditions != null ? conditions.observationLocationPosition : null);
+        var activity = Activity.getActivityInfo();
+        var gps = usableSunLocation(activity != null ? activity.currentLocation : null);
+        var saved = Application.Storage.getValue(SUN_LOCATION_KEY) as Array<Numeric>?;
+        var savedLocation = saved != null
+            ? new Position.Location({ :latitude => saved[0], :longitude => saved[1], :format => :degrees })
+            : null;
+        var location = pickSunLocation(weather, gps, savedLocation);
+        if (weather != null || gps != null) {
+            var degrees = (location as Position.Location).toDegrees();
+            if (shouldSaveSunLocation(saved, degrees)) {
+                Application.Storage.setValue(SUN_LOCATION_KEY, [degrees[0].toFloat(), degrees[1].toFloat()]);
+            }
+        }
+        return location;
+    }
+
+    function sunReadout() as ReadoutContent {
+        var location = sunLocation();
         if (location == null) {
             return sunNoData();
         }

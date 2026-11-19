@@ -44,6 +44,14 @@ A fenix 6S Pro user found the Slot values too bold and hard to read. Ticket 14 f
 | 14 | [Clean 1-bit fonts on MIP watches](14-clean-mip-fonts.md) | none |
 | 15 | [Larger Slot values on 240 px watches, release 0.3.2](15-larger-slot-values-240.md) | 14 |
 
+### Sunrise/sunset location
+
+A fenix 6S Pro user saw no sunrise/sunset time even after a GPS fix, because the Readout only took its location from phone weather.
+
+| # | Ticket | Depends on |
+|---|--------|------------|
+| 16 | [Sunrise/sunset without phone weather, release 0.3.3](16-sun-location-fallback.md) | none |
+
 ## Shared facts
 
 - v1 target: fenix 7 Pro Sapphire Solar 47mm, device id `fenix7pro`, 260×260 round MIP display, 64 colors, Connect IQ API 5.2. Tickets 10 to 13 add more watches (see the multi-device spec).
